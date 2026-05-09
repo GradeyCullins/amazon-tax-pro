@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Accounting Dashboard</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <style>
+      body { background:#fff; color:#111; font-family:Inter,system-ui,sans-serif; margin:0; }
+      .shell { max-width:1200px; margin:0 auto; padding:16px; }
+      .grid { display:grid; gap:12px; }
+      .cards { grid-template-columns: repeat(4,minmax(0,1fr)); }
+      .card { border:1px solid #111; padding:12px; }
+      .muted { color:#666; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+      .value { font-size:24px; font-weight:700; margin-top:6px; }
+      .tight { border-collapse:collapse; width:100%; font-size:14px; }
+      .tight td,.tight th { border-bottom:1px solid #111; padding:8px 4px; text-align:left; }
+      .bars { display:grid; gap:8px; }
+      .bar { display:flex; align-items:center; gap:8px; }
+      .bar span:last-child { height:10px; background:#111; display:inline-block; }
+    </style>
+  </head>
+
+  <body>
+    <main class="shell">
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+<h1>Accounting Dashboard</h1>
+
+<div class="grid cards" style="margin-top:12px;">
+  <div class="card"><div class="muted">Cash Balance</div><div class="value"><%= number_to_currency(@cash_balance) %></div></div>
+  <div class="card"><div class="muted">Monthly Revenue</div><div class="value"><%= number_to_currency(@monthly_revenue) %></div></div>
+  <div class="card"><div class="muted">Monthly Expenses</div><div class="value"><%= number_to_currency(@monthly_expenses) %></div></div>
+  <div class="card"><div class="muted">Outstanding Invoices</div><div class="value"><%= number_to_currency(@outstanding_invoices) %></div></div>
+</div>
+
+<div class="grid" style="grid-template-columns:2fr 1fr; margin-top:12px;">
+  <turbo-frame id="recent_transactions" class="card">
+    <h2 style="margin-top:0;">Recent Transactions</h2>
+    <table class="tight">
+      <thead><tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Amount</th></tr></thead>
+      <tbody>
+      <% @recent_transactions.each do |t| %>
+        <tr>
+          <td><%= t.transacted_on %></td>
+          <td><%= t.description %></td>
+          <td><%= t.debit_account.name %></td>
+          <td><%= t.credit_account.name %></td>
+          <td><%= number_to_currency(t.amount_cents / 100.0) %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </turbo-frame>
+
+  <turbo-frame id="expense_breakdown" class="card">
+    <h2 style="margin-top:0;">Expense Categories</h2>
+    <div class="bars">
+      <% total = @expense_breakdown.values.sum.nonzero? || 1 %>
+      <% @expense_breakdown.each do |category, cents| %>
+        <% width = ((cents.to_f / total) * 100).round %>
+        <div class="bar"><span><%= category %></span><span style="width:<%= width %>%"></span></div>
+      <% end %>
+    </div>
+  </turbo-frame>
+</div>

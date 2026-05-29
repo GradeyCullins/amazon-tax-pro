@@ -1,4 +1,4 @@
-<h1>Accounting Dashboard</h1>
+<h1>Books That Bounce</h1>
 
 <div class="grid cards" style="margin-top:12px;">
   <div class="card"><div class="muted">Cash Balance</div><div class="value"><%= number_to_currency(@cash_balance) %></div></div>
@@ -7,7 +7,28 @@
   <div class="card"><div class="muted">Outstanding Invoices</div><div class="value"><%= number_to_currency(@outstanding_invoices) %></div></div>
 </div>
 
-<div class="grid" style="grid-template-columns:2fr 1fr; margin-top:12px;">
+<div class="grid cards" style="margin-top:12px;">
+  <div class="card"><div class="muted">Amazon YTD Gross Sales</div><div class="value"><%= number_to_currency(@amazon_ytd_totals.fetch("gross_sales", 0) / 100.0) %></div></div>
+  <div class="card"><div class="muted">Amazon YTD Fees</div><div class="value"><%= number_to_currency((@amazon_ytd_totals.fetch("amazon_fees", 0) + @amazon_ytd_totals.fetch("fba_fees", 0)) / 100.0) %></div></div>
+  <div class="card"><div class="muted">Amazon YTD Refunds</div><div class="value"><%= number_to_currency(@amazon_ytd_totals.fetch("refunds_returns", 0) / 100.0) %></div></div>
+  <div class="card"><div class="muted">Rows Needing Review</div><div class="value"><%= @amazon_pending_review_count %></div></div>
+</div>
+
+<div class="card" style="margin-top:12px;">
+  <div class="page-header" style="margin-bottom:0;">
+    <div>
+      <h2 style="margin-top:0;">Amazon Tax Prep</h2>
+      <p class="muted"><%= @amazon_uncategorized_count %> uncategorized rows need review before they are tax-ready.</p>
+    </div>
+    <div class="actions">
+      <%= link_to "Import settlement", new_amazon_import_batch_path, class: "button" %>
+      <%= link_to "View tax packet", tax_packet_path, class: "button secondary" %>
+      <%= link_to "TurboTax export", turbo_tax_export_path, class: "button secondary" %>
+    </div>
+  </div>
+</div>
+
+<div class="grid dashboard-main">
   <turbo-frame id="recent_transactions" class="card">
     <h2 style="margin-top:0;">Recent Transactions</h2>
     <table class="tight">

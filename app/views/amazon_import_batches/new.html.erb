@@ -1,0 +1,17 @@
+<div class="page-header">
+  <div>
+    <h1>Import Amazon Data</h1>
+    <p class="muted">Upload an Amazon settlement or 2025 transaction report CSV/TSV exported from Seller Central.</p>
+  </div>
+  <%= link_to "All imports", amazon_import_batches_path, class: "button secondary" %>
+</div>
+
+<div class="card">
+  <%= form_with url: amazon_import_batches_path, local: true, multipart: true do |form| %>
+    <div class="form-row">
+      <%= form.label :file, "Amazon CSV or TSV" %>
+      <%= form.file_field :file, accept: ".csv,.tsv,.txt,text/csv,text/tab-separated-values" %>
+    </div>
+    <%= form.submit "Import for review", class: "button" %>
+  <% end %>
+</div>

@@ -1,11 +1,9 @@
 source 'https://rubygems.org'
 
-gem 'rails', '~> 8.0.2'
-gem 'sqlite3', '>= 2.1'
+gem 'rails', '~> 7.0.8'
+gem 'sqlite3', '~> 1.4'
 gem 'puma', '>= 6.0'
-gem 'turbo-rails'
-gem 'stimulus-rails'
-gem 'tailwindcss-rails'
+gem 'csv'
 
 group :development, :test do
   gem 'debug'

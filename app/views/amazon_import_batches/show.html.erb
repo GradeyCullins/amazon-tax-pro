@@ -1,0 +1,62 @@
+<div class="page-header">
+  <div>
+    <h1>Review Amazon Import</h1>
+    <p class="muted"><%= @batch.filename %> · <%= @batch.row_count %> rows · <%= @batch.status.humanize %></p>
+  </div>
+  <div class="actions">
+    <%= link_to "Tax packet", tax_packet_path, class: "button secondary" %>
+    <%= link_to "All imports", amazon_import_batches_path, class: "button secondary" %>
+  </div>
+</div>
+
+<div class="card">
+  <table class="tight">
+    <thead>
+      <tr>
+        <th>Row</th>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Tax category</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <tr>
+          <td><%= row.source_row_number %></td>
+          <td><%= row.posted_on || "Unknown" %></td>
+          <td>
+            <strong><%= row.description.presence || "Amazon settlement row" %></strong>
+            <% if row.order_id.present? %>
+              <div class="muted">Order <%= row.order_id %></div>
+            <% end %>
+          </td>
+          <td><%= number_to_currency(row.amount_cents / 100.0) %></td>
+          <td>
+            <% if row.pending? %>
+              <%= form_with model: row, url: amazon_import_row_path(row), local: true, class: "inline-form" do |form| %>
+                <%= form.select :tax_category, AmazonImportRow.category_options %>
+                <%= form.submit "Accept", class: "button small" %>
+                <%= form.submit "Skip", class: "button small secondary" %>
+              <% end %>
+            <% else %>
+              <%= row.tax_category_name %>
+            <% end %>
+          </td>
+          <td><%= row.status.humanize %></td>
+          <td>
+            <% if row.transaction_id.present? %>
+              Transaction posted
+            <% elsif row.expense_id.present? %>
+              Expense posted
+            <% else %>
+              -
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

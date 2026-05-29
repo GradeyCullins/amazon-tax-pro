@@ -1,0 +1,11 @@
+Synthetic Amazon Tax Reduction Summary,,,,,
+,,,,,
+Source file,synthetic_amazon_2025_test_report_randomized.csv,,,Note,Synthetic test data - do not file these numbers
+Raw transaction rows,1439,,,Generated output,Expense/reduction categorization for import workflow testing
+Gross sales income from orders,"$37,842.09",Enter/compare to gross receipts,,Treatment,Income
+"Returns, refunds, promo rebates","$6,776.09",Enter as income reduction / returns & allowances,,Treatment,Reduces taxable gross receipts
+Other income / reimbursements,$293.73,Usually income or offsets related losses,,Treatment,"Review, do not deduct as expense"
+Amazon operating expenses,"$28,671.98",Enter in expense categories,,Treatment,Deductible business expenses
+Marketplace sales tax pass-through,$0.00,Generally exclude/pass-through,,Treatment,Do not treat as income/expense if remitted
+Bank transfers / payouts,"$102,091.18",Ignore for tax categories,,Treatment,Reconciliation only
+Pre-COGS Amazon estimate,"$2,687.75",Before inventory/COGS and non-Amazon expenses,,Formula,Gross - returns + other income - expenses

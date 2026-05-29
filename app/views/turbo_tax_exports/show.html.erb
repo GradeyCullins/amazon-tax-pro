@@ -1,0 +1,118 @@
+<div class="page-header">
+  <div>
+    <h1>TurboTax Export</h1>
+    <p class="muted">Generate TurboTax Desktop TXF files and review packets from Amazon seller activity.</p>
+  </div>
+  <div class="actions">
+    <%= link_to "Amazon data", amazon_import_batches_path, class: "button secondary" %>
+    <%= link_to "Tax packet", tax_packet_path(year: @year), class: "button secondary" %>
+  </div>
+</div>
+
+<div class="card">
+  <%= form_with url: turbo_tax_export_path, method: :get, local: true, class: "inline-form" do |form| %>
+    <%= form.label :year, "Tax year" %>
+    <%= form.number_field :year, value: @year, min: 2000, max: Date.current.year + 1 %>
+    <%= form.submit "Update", class: "button small" %>
+  <% end %>
+</div>
+
+<div class="grid dashboard-main">
+  <div class="card">
+    <h2 style="margin-top:0;">Schedule C Preview</h2>
+    <table class="tight">
+      <thead>
+        <tr>
+          <th>TXF Ref</th>
+          <th>TurboTax Line</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @export.lines.each do |line| %>
+          <tr>
+            <td><%= line.txf_ref %></td>
+            <td><%= line.label %></td>
+            <td><%= number_to_currency(line.amount_cents / 100.0) %></td>
+          </tr>
+        <% end %>
+        <% if @export.lines.empty? %>
+          <tr><td colspan="3">No categorized Amazon rows are ready for <%= @year %>.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Readiness</h2>
+    <% if @export.warnings.any? %>
+      <ul style="margin-top:0;">
+        <% @export.warnings.each do |warning| %>
+          <li><%= warning %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>No export warnings for <%= @year %>.</p>
+    <% end %>
+    <div class="actions">
+      <%= link_to "Download TXF", download_turbo_tax_export_path(year: @year), class: "button" %>
+      <%= link_to "Audit CSV", download_turbo_tax_export_path(year: @year, format_type: "audit"), class: "button secondary" %>
+      <%= link_to "Instructions", download_turbo_tax_export_path(year: @year, format_type: "instructions"), class: "button secondary" %>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Manual COGS Inputs</h2>
+  <p class="muted">Amazon settlement data does not know what the seller paid for inventory. Enter annual totals here before generating the final TXF.</p>
+  <%= form_with model: @input, url: turbo_tax_export_path(year: @year), method: :patch, local: true do |form| %>
+    <%= form.hidden_field :tax_year, value: @year %>
+    <div class="form-row">
+      <%= form.label :business_name, "Schedule C business name" %>
+      <%= form.text_field :business_name %>
+    </div>
+    <div class="grid cards">
+      <% [
+        [:beginning_inventory_dollars, "Beginning inventory"],
+        [:purchases_dollars, "Purchases"],
+        [:materials_dollars, "Materials and supplies"],
+        [:labor_dollars, "Labor"],
+        [:other_costs_dollars, "Other COGS"],
+        [:ending_inventory_dollars, "Ending inventory"]
+      ].each do |field, label| %>
+        <div class="form-row">
+          <%= form.label field, label %>
+          <%= form.number_field field, value: @input.public_send(field), step: "0.01", min: "0" %>
+        </div>
+      <% end %>
+    </div>
+    <%= form.submit "Save COGS inputs", class: "button" %>
+  <% end %>
+</div>
+
+<div class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Excluded Rows</h2>
+  <table class="tight">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @export.excluded_rows.first(50).each do |row| %>
+        <tr>
+          <td><%= row.posted_on || "Unknown" %></td>
+          <td><%= row.tax_category_name %></td>
+          <td><%= row.description %></td>
+          <td><%= number_to_currency(row.amount_cents / 100.0) %></td>
+        </tr>
+      <% end %>
+      <% if @export.excluded_rows.empty? %>
+        <tr><td colspan="4">No excluded rows for <%= @year %>.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

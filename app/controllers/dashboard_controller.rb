@@ -6,5 +6,8 @@ class DashboardController < ApplicationController
     @outstanding_invoices = Invoice.outstanding.sum(:total_cents) / 100.0
     @recent_transactions = Transaction.includes(:debit_account, :credit_account).order(transacted_on: :desc).limit(8)
     @expense_breakdown = Expense.current_month.group(:category).sum(:amount_cents)
+    @amazon_ytd_totals = AmazonImportRow.accepted_tax_totals(Date.current.year)
+    @amazon_uncategorized_count = AmazonImportRow.pending.where(tax_category: "uncategorized").count
+    @amazon_pending_review_count = AmazonImportRow.pending.count
   end
 end

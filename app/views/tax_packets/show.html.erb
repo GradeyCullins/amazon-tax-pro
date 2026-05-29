@@ -1,0 +1,52 @@
+<div class="page-header">
+  <div>
+    <h1>Amazon Tax Packet</h1>
+    <p class="muted">Tax prep summary from accepted Amazon settlement rows. Review with a tax professional before filing.</p>
+  </div>
+  <%= link_to "Amazon imports", amazon_import_batches_path, class: "button secondary" %>
+</div>
+
+<div class="card">
+  <%= form_with url: tax_packet_path, method: :get, local: true, class: "inline-form" do |form| %>
+    <%= form.label :year, "Tax year" %>
+    <%= form.number_field :year, value: @year, min: 2000, max: Date.current.year + 1 %>
+    <%= form.submit "Update", class: "button small" %>
+  <% end %>
+</div>
+
+<div class="grid cards" style="margin-top:12px;">
+  <% AmazonImportRow::TAX_CATEGORIES.each do |category, label| %>
+    <% next if category == "uncategorized" && @totals.fetch(category, 0).zero? %>
+    <div class="card">
+      <div class="muted"><%= label %></div>
+      <div class="value"><%= number_to_currency(@totals.fetch(category, 0) / 100.0) %></div>
+    </div>
+  <% end %>
+</div>
+
+<div class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Audit Trail</h2>
+  <table class="tight">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @accepted_rows.each do |row| %>
+        <tr>
+          <td><%= row.posted_on || "Unknown" %></td>
+          <td><%= row.tax_category_name %></td>
+          <td><%= row.description.presence || row.order_id || "Amazon settlement row" %></td>
+          <td><%= number_to_currency(row.tax_amount_cents / 100.0) %></td>
+        </tr>
+      <% end %>
+      <% if @accepted_rows.empty? %>
+        <tr><td colspan="4">No accepted Amazon settlement rows for <%= @year %>.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

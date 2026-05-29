@@ -1,0 +1,38 @@
+<div class="page-header">
+  <div>
+    <h1>Amazon Data</h1>
+    <p class="muted">Amazon transaction reports imported for tax prep review and TurboTax export.</p>
+  </div>
+  <div class="actions">
+    <%= link_to "TurboTax export", turbo_tax_export_path, class: "button secondary" %>
+    <%= link_to "Import Amazon file", new_amazon_import_batch_path, class: "button" %>
+  </div>
+</div>
+
+<div class="card">
+  <table class="tight">
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Imported</th>
+        <th>Rows</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @batches.each do |batch| %>
+        <tr>
+          <td><%= batch.filename %></td>
+          <td><%= l(batch.imported_at, format: :short) %></td>
+          <td><%= batch.row_count %></td>
+          <td><%= batch.status.humanize %></td>
+          <td><%= link_to "Review", amazon_import_batch_path(batch) %></td>
+        </tr>
+      <% end %>
+      <% if @batches.empty? %>
+        <tr><td colspan="5">No Amazon transaction files have been imported yet.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

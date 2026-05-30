@@ -31,6 +31,4 @@ ssh:
   user: gb
 
 volumes:
-  - "amazon_tax_pro_storage:/app/storage"
-
-asset_path: /app/public/assets
+  - "amazon_tax_pro_storage:/rails/storage"

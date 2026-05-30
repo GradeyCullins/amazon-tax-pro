@@ -1,13 +1,13 @@
 class DashboardController < ApplicationController
   def index
-    @cash_balance = Account.asset.sum(:balance_cents) / 100.0
-    @monthly_revenue = Transaction.current_month.revenue.sum(:amount_cents) / 100.0
-    @monthly_expenses = Transaction.current_month.expense.sum(:amount_cents) / 100.0
-    @outstanding_invoices = Invoice.outstanding.sum(:total_cents) / 100.0
-    @recent_transactions = Transaction.includes(:debit_account, :credit_account).order(transacted_on: :desc).limit(8)
-    @expense_breakdown = Expense.current_month.group(:category).sum(:amount_cents)
-    @amazon_ytd_totals = AmazonImportRow.accepted_tax_totals(Date.current.year)
-    @amazon_uncategorized_count = AmazonImportRow.pending.where(tax_category: "uncategorized").count
-    @amazon_pending_review_count = AmazonImportRow.pending.count
+    @year = AmazonImportRow.where.not(posted_on: nil).maximum("strftime('%Y', posted_on)")&.to_i || Date.current.year
+    @latest_batch = AmazonImportBatch.order(imported_at: :desc).first
+    @recent_batches = AmazonImportBatch.order(imported_at: :desc).limit(5)
+    @year_totals = AmazonImportRow.accepted_tax_totals(@year)
+    @pending_review_count = AmazonImportRow.pending.count
+    @uncategorized_count = AmazonImportRow.pending.where(tax_category: "uncategorized").count
+    @accepted_count = AmazonImportRow.accepted.for_year(@year).count
+    @excluded_count = AmazonImportRow.for_year(@year).where(tax_category: AmazonImportRow::EXCLUDED_TAX_CATEGORIES).count
+    @export_input = TurboTaxExportInput.for_year(@year)
   end
 end

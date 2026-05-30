@@ -19,7 +19,7 @@
         <th>Amount</th>
         <th>Tax category</th>
         <th>Status</th>
-        <th>Action</th>
+        <th>Review note</th>
       </tr>
     </thead>
     <tbody>
@@ -47,12 +47,12 @@
           </td>
           <td><%= row.status.humanize %></td>
           <td>
-            <% if row.transaction_id.present? %>
-              Transaction posted
-            <% elsif row.expense_id.present? %>
-              Expense posted
+            <% if row.accepted? %>
+              Included in tax summaries
+            <% elsif row.skipped? %>
+              Excluded from tax summaries
             <% else %>
-              -
+              Waiting for review
             <% end %>
           </td>
         </tr>

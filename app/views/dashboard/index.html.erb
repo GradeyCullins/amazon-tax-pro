@@ -1,60 +1,76 @@
-<h1>Books That Bounce</h1>
-
-<div class="grid cards" style="margin-top:12px;">
-  <div class="card"><div class="muted">Cash Balance</div><div class="value"><%= number_to_currency(@cash_balance) %></div></div>
-  <div class="card"><div class="muted">Monthly Revenue</div><div class="value"><%= number_to_currency(@monthly_revenue) %></div></div>
-  <div class="card"><div class="muted">Monthly Expenses</div><div class="value"><%= number_to_currency(@monthly_expenses) %></div></div>
-  <div class="card"><div class="muted">Outstanding Invoices</div><div class="value"><%= number_to_currency(@outstanding_invoices) %></div></div>
-</div>
-
-<div class="grid cards" style="margin-top:12px;">
-  <div class="card"><div class="muted">Amazon YTD Gross Sales</div><div class="value"><%= number_to_currency(@amazon_ytd_totals.fetch("gross_sales", 0) / 100.0) %></div></div>
-  <div class="card"><div class="muted">Amazon YTD Fees</div><div class="value"><%= number_to_currency((@amazon_ytd_totals.fetch("amazon_fees", 0) + @amazon_ytd_totals.fetch("fba_fees", 0)) / 100.0) %></div></div>
-  <div class="card"><div class="muted">Amazon YTD Refunds</div><div class="value"><%= number_to_currency(@amazon_ytd_totals.fetch("refunds_returns", 0) / 100.0) %></div></div>
-  <div class="card"><div class="muted">Rows Needing Review</div><div class="value"><%= @amazon_pending_review_count %></div></div>
-</div>
-
-<div class="card" style="margin-top:12px;">
-  <div class="page-header" style="margin-bottom:0;">
-    <div>
-      <h2 style="margin-top:0;">Amazon Tax Prep</h2>
-      <p class="muted"><%= @amazon_uncategorized_count %> uncategorized rows need review before they are tax-ready.</p>
-    </div>
-    <div class="actions">
-      <%= link_to "Import settlement", new_amazon_import_batch_path, class: "button" %>
-      <%= link_to "View tax packet", tax_packet_path, class: "button secondary" %>
-      <%= link_to "TurboTax export", turbo_tax_export_path, class: "button secondary" %>
-    </div>
+<div class="page-header">
+  <div>
+    <h1>Amazon Seller Tax Readiness</h1>
+    <p class="muted">Import settlement reports, clean up tax categories, and generate year-end files for your CPA or TurboTax.</p>
+  </div>
+  <div class="actions">
+    <%= link_to "Import settlement", new_amazon_import_batch_path, class: "button" %>
+    <%= link_to "Open tax packet", tax_packet_path(year: @year), class: "button secondary" %>
+    <%= link_to "Open TurboTax export", turbo_tax_export_path(year: @year), class: "button secondary" %>
   </div>
 </div>
 
+<div class="grid cards">
+  <div class="card"><div class="muted">Rows needing review</div><div class="value"><%= @pending_review_count %></div></div>
+  <div class="card"><div class="muted">Uncategorized rows</div><div class="value"><%= @uncategorized_count %></div></div>
+  <div class="card"><div class="muted"><%= @year %> accepted rows</div><div class="value"><%= @accepted_count %></div></div>
+  <div class="card"><div class="muted">Excluded rows</div><div class="value"><%= @excluded_count %></div></div>
+</div>
+
+<div class="grid cards" style="margin-top:12px;">
+  <div class="card"><div class="muted"><%= @year %> gross sales</div><div class="value"><%= number_to_currency(@year_totals.fetch("gross_sales", 0) / 100.0) %></div></div>
+  <div class="card"><div class="muted"><%= @year %> fees</div><div class="value"><%= number_to_currency((@year_totals.fetch("amazon_fees", 0) + @year_totals.fetch("fba_fees", 0)) / 100.0) %></div></div>
+  <div class="card"><div class="muted"><%= @year %> refunds</div><div class="value"><%= number_to_currency(@year_totals.fetch("refunds_returns", 0) / 100.0) %></div></div>
+  <div class="card"><div class="muted">Manual COGS</div><div class="value"><%= @export_input.cost_of_goods_sold_cents.zero? ? "Missing" : number_to_currency(@export_input.cost_of_goods_sold_cents / 100.0) %></div></div>
+</div>
+
 <div class="grid dashboard-main">
-  <turbo-frame id="recent_transactions" class="card">
-    <h2 style="margin-top:0;">Recent Transactions</h2>
+  <div class="card">
+    <h2 style="margin-top:0;">What needs attention</h2>
     <table class="tight">
-      <thead><tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Amount</th></tr></thead>
       <tbody>
-      <% @recent_transactions.each do |t| %>
         <tr>
-          <td><%= t.transacted_on %></td>
-          <td><%= t.description %></td>
-          <td><%= t.debit_account.name %></td>
-          <td><%= t.credit_account.name %></td>
-          <td><%= number_to_currency(t.amount_cents / 100.0) %></td>
+          <th scope="row">Import status</th>
+          <td>
+            <% if @latest_batch.present? %>
+              Latest file: <%= @latest_batch.filename %> from <%= l(@latest_batch.imported_at, format: :short) %>
+            <% else %>
+              No Amazon settlement files imported yet.
+            <% end %>
+          </td>
         </tr>
-      <% end %>
+        <tr>
+          <th scope="row">Review queue</th>
+          <td><%= @pending_review_count.zero? ? "No rows waiting for review." : "#{@pending_review_count} rows still need review." %></td>
+        </tr>
+        <tr>
+          <th scope="row">Category cleanup</th>
+          <td><%= @uncategorized_count.zero? ? "No uncategorized rows are blocking tax prep." : "#{@uncategorized_count} rows still need a tax category." %></td>
+        </tr>
+        <tr>
+          <th scope="row">COGS input</th>
+          <td><%= @export_input.cost_of_goods_sold_cents.zero? ? "Add inventory and purchase totals before final TXF export." : "Manual COGS inputs are on file for #{@year}." %></td>
+        </tr>
       </tbody>
     </table>
-  </turbo-frame>
+  </div>
 
-  <turbo-frame id="expense_breakdown" class="card">
-    <h2 style="margin-top:0;">Expense Categories</h2>
-    <div class="bars">
-      <% total = @expense_breakdown.values.sum.nonzero? || 1 %>
-      <% @expense_breakdown.each do |category, cents| %>
-        <% width = ((cents.to_f / total) * 100).round %>
-        <div class="bar"><span><%= category %></span><span style="width:<%= width %>%"></span></div>
-      <% end %>
-    </div>
-  </turbo-frame>
+  <div class="card">
+    <h2 style="margin-top:0;">Recent imports</h2>
+    <table class="tight">
+      <thead><tr><th>File</th><th>Imported</th><th>Status</th></tr></thead>
+      <tbody>
+        <% @recent_batches.each do |batch| %>
+          <tr>
+            <td><%= link_to batch.filename, amazon_import_batch_path(batch) %></td>
+            <td><%= l(batch.imported_at, format: :short) %></td>
+            <td><%= batch.status.humanize %></td>
+          </tr>
+        <% end %>
+        <% if @recent_batches.empty? %>
+          <tr><td colspan="3">No imports yet.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>

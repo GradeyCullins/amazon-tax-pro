@@ -7,9 +7,4 @@ Rails.application.routes.draw do
   resource :turbo_tax_export, path: "turbotax-export", only: [:show, :update] do
     get :download
   end
-
-  resources :transactions
-  resources :invoices
-  resources :expenses
-  resources :accounts
 end

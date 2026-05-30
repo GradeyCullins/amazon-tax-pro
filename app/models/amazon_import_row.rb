@@ -63,7 +63,6 @@ class AmazonImportRow < ApplicationRecord
 
   def accept!(category)
     update!(tax_category: category, status: :accepted)
-    post_to_accounting!
     amazon_import_batch.refresh_status!
   end
 
@@ -72,42 +71,6 @@ class AmazonImportRow < ApplicationRecord
     amazon_import_batch.refresh_status!
   end
 
-  def post_to_accounting!
-    return if transaction_id.present? || expense_id.present? || amount_cents.zero?
-
-    if REVENUE_CATEGORIES.include?(tax_category)
-      post_revenue_transaction!
-    else
-      post_expense!
-    end
-  end
-
   private
 
-  def post_revenue_transaction!
-    update!(
-      accounting_transaction: Transaction.create!(
-        transacted_on: posted_on || Date.current,
-        description: accounting_description,
-        debit_account: Account.find_or_create_by!(name: "Amazon Clearing") { |account| account.kind = :asset },
-        credit_account: Account.find_or_create_by!(name: "Amazon Sales Revenue") { |account| account.kind = :revenue },
-        amount_cents: amount_cents.abs
-      )
-    )
-  end
-
-  def post_expense!
-    update!(
-      expense: Expense.create!(
-        vendor: "Amazon",
-        category: tax_category_name,
-        spent_on: posted_on || Date.current,
-        amount_cents: amount_cents.abs
-      )
-    )
-  end
-
-  def accounting_description
-    [transaction_type, amount_description, order_id].compact_blank.join(" - ").presence || "Amazon settlement row"
-  end
 end

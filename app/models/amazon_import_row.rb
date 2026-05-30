@@ -24,7 +24,7 @@ class AmazonImportRow < ApplicationRecord
 
   enum :status, { pending: 0, accepted: 1, skipped: 2 }
 
-  serialize :raw_data, JSON
+  serialize :raw_data, coder: JSON
 
   validates :source_row_number, :amount_cents, :tax_category, presence: true
   validates :tax_category, inclusion: { in: TAX_CATEGORIES.keys }

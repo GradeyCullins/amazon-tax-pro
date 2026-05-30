@@ -1,0 +1,35 @@
+service: amazon-tax-pro
+image: gradeycullins/amazon-tax-pro
+servers:
+  web:
+    - hetzner
+
+proxy:
+  ssl: true
+  host: amazontaxpro.com
+
+registry:
+  # server: localhost:5555
+  username: gradeycullins
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    TZ: America/Devner
+  secret:
+    - RAILS_MASTER_KEY
+
+aliases:
+  shell: app exec --interactive --reuse "bash"
+
+ssh:
+  user: gb
+
+volumes:
+  - "amazon_tax_pro_storage:/app/storage"
+
+asset_path: /app/public/assets

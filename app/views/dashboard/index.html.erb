@@ -10,6 +10,36 @@
   </div>
 </div>
 
+<div class="card guide-card" style="margin-bottom:18px;">
+  <h2 style="margin-top:0;">How to use this app</h2>
+  <p class="guide-copy">
+    Work left to right: import Amazon data, review the categories this app suggests, then generate the tax packet or TurboTax export for the selected tax year.
+  </p>
+</div>
+
+<div class="grid guide-grid cards">
+  <div class="card guide-card">
+    <div class="guide-step">1</div>
+    <h3>Import Seller Central data</h3>
+    <p class="guide-copy">Upload an Amazon settlement CSV, TSV, or the 2025 transaction report from Seller Central. The importer splits multi-amount transaction rows into tax review rows.</p>
+  </div>
+  <div class="card guide-card">
+    <div class="guide-step">2</div>
+    <h3>Review the queue</h3>
+    <p class="guide-copy">Open each import and accept rows that belong in your tax summary. Change the category first when Amazon fees, FBA fees, refunds, shipping, or advertising need correction.</p>
+  </div>
+  <div class="card guide-card">
+    <div class="guide-step">3</div>
+    <h3>Finish manual inputs</h3>
+    <p class="guide-copy">Amazon files do not know what you paid for inventory. Add COGS and business details on the TurboTax export page before treating the final numbers as ready.</p>
+  </div>
+  <div class="card guide-card">
+    <div class="guide-step">4</div>
+    <h3>Export tax-ready files</h3>
+    <p class="guide-copy">Use the tax packet for CPA review, or download the TXF and audit CSV for TurboTax Desktop after rows are categorized and warnings are clear.</p>
+  </div>
+</div>
+
 <div class="grid cards">
   <div class="card"><div class="muted">Rows needing review</div><div class="value"><%= @pending_review_count %></div></div>
   <div class="card"><div class="muted">Uncategorized rows</div><div class="value"><%= @uncategorized_count %></div></div>

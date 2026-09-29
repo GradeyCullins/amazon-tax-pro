@@ -1,0 +1,22 @@
+[tools]
+ruby = "3.4.5"
+node = "22.12.0"
+
+[env]
+PORT = "3002"
+
+[tasks.dev]
+description = "Run the Rails dev server (0.0.0.0:3002)"
+run = "bin/dev"
+
+[tasks.setup]
+description = "Install gems and prepare the database"
+run = ["bundle install", "bin/rails db:prepare"]
+
+[tasks.migrate]
+description = "Run database migrations"
+run = "bin/rails db:migrate"
+
+[tasks.check]
+description = "Boot check and whitespace check"
+run = ["bundle exec rails runner 'puts \"rails boot ok\"'", "git diff --check"]

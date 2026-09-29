@@ -1,0 +1,16 @@
+<span class="sticker">Private beta</span>
+<div class="lock" aria-hidden="true"></div>
+<h1>Amazon Tax Pro is locked.</h1>
+<p>Enter the access password to continue. This device stays unlocked for 30 days.</p>
+
+<% if alert.present? %>
+  <div class="flash"><%= alert %></div>
+<% end %>
+
+<%= form_with url: site_gate_path, local: true do |form| %>
+  <%= form.label :password, "Access password" %>
+  <%= form.password_field :password, required: true, autofocus: true, autocomplete: "current-password" %>
+  <%= form.submit "Unlock", class: "button" %>
+<% end %>
+
+<p class="fine">Amazon seller tax prep · amazontaxpro.com</p>

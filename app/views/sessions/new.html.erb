@@ -1,0 +1,18 @@
+<div class="card auth-card">
+  <h1>Sign in</h1>
+  <p class="guide-copy" style="margin-bottom:16px;">Sign in to review your Amazon imports and tax exports.</p>
+
+  <%= form_with url: session_path, local: true do |form| %>
+    <div class="form-row">
+      <%= form.label :email_address, "Email" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", value: params[:email_address] %>
+    </div>
+    <div class="form-row">
+      <%= form.label :password %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %>
+    </div>
+    <%= form.submit "Sign in", class: "button" %>
+  <% end %>
+
+  <p class="guide-copy" style="margin-top:18px;">New here? <%= link_to "Create an account", new_registration_path %></p>
+</div>

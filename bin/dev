@@ -3,5 +3,6 @@
 set -e
 
 export PORT="${PORT:-3002}"
+export SOLID_QUEUE_IN_PUMA="${SOLID_QUEUE_IN_PUMA:-1}"
 
 exec ./bin/rails server -b 0.0.0.0 -p "$PORT"

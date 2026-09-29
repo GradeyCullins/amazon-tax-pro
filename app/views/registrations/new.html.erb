@@ -1,0 +1,22 @@
+<div class="card auth-card">
+  <h1>Create account</h1>
+  <p class="guide-copy" style="margin-bottom:16px;">After signing up you can connect your Amazon seller account and import a tax year automatically.</p>
+
+  <%= form_with model: @user, url: registration_path, local: true do |form| %>
+    <div class="form-row">
+      <%= form.label :email_address, "Email" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username" %>
+    </div>
+    <div class="form-row">
+      <%= form.label :password %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", minlength: 8, maxlength: 72 %>
+    </div>
+    <div class="form-row">
+      <%= form.label :password_confirmation, "Confirm password" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", minlength: 8, maxlength: 72 %>
+    </div>
+    <%= form.submit "Create account", class: "button" %>
+  <% end %>
+
+  <p class="guide-copy" style="margin-top:18px;">Already have an account? <%= link_to "Sign in", new_session_path %></p>
+</div>

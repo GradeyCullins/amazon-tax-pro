@@ -1,14 +1,16 @@
 <div class="page-header">
   <div>
     <h1>Amazon Seller Tax Readiness</h1>
-    <p class="muted">Import settlement reports, clean up tax categories, and generate year-end files for your CPA or TurboTax.</p>
+    <p class="muted">Connect Amazon to import a tax year automatically, clean up tax categories, and generate year-end files for your CPA or TurboTax.</p>
   </div>
   <div class="actions">
-    <%= link_to "Import settlement", new_amazon_import_batch_path, class: "button" %>
+    <%= link_to "Upload a file", new_amazon_import_batch_path, class: "button secondary" %>
     <%= link_to "Open tax packet", tax_packet_path(year: @year), class: "button secondary" %>
     <%= link_to "Open TurboTax export", turbo_tax_export_path(year: @year), class: "button secondary" %>
   </div>
 </div>
+
+<%= render "amazon_connection", connection: @amazon_connection, latest_sync: @latest_sync, sync_year_options: @sync_year_options %>
 
 <div class="card guide-card" style="margin-bottom:18px;">
   <h2 style="margin-top:0;">How to use this app</h2>
@@ -20,8 +22,8 @@
 <div class="grid guide-grid cards">
   <div class="card guide-card">
     <div class="guide-step">1</div>
-    <h3>Import Seller Central data</h3>
-    <p class="guide-copy">Upload an Amazon settlement CSV, TSV, or the 2025 transaction report from Seller Central. The importer splits multi-amount transaction rows into tax review rows.</p>
+    <h3>Import Amazon data</h3>
+    <p class="guide-copy">Connect your Amazon seller account and sync a tax year, or upload a settlement CSV/TSV or 2025 transaction report from Seller Central. Each transaction is split into tax review rows.</p>
   </div>
   <div class="card guide-card">
     <div class="guide-step">2</div>
@@ -63,9 +65,9 @@
           <th scope="row">Import status</th>
           <td>
             <% if @latest_batch.present? %>
-              Latest file: <%= @latest_batch.filename %> from <%= l(@latest_batch.imported_at, format: :short) %>
+              Latest import: <%= @latest_batch.filename %> from <%= l(@latest_batch.imported_at, format: :short) %>
             <% else %>
-              No Amazon settlement files imported yet.
+              No Amazon data imported yet.
             <% end %>
           </td>
         </tr>
@@ -88,7 +90,7 @@
   <div class="card">
     <h2 style="margin-top:0;">Recent imports</h2>
     <table class="tight">
-      <thead><tr><th>File</th><th>Imported</th><th>Status</th></tr></thead>
+      <thead><tr><th>Import</th><th>Imported</th><th>Status</th></tr></thead>
       <tbody>
         <% @recent_batches.each do |batch| %>
           <tr>

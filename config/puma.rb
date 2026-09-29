@@ -6,3 +6,6 @@ port ENV.fetch("PORT", 3002)
 environment ENV.fetch("RAILS_ENV", "development")
 
 pidfile ENV.fetch("PIDFILE", "tmp/pids/server.pid")
+
+# Run Solid Queue inside Puma so background jobs need no extra process (dev and Kamal).
+plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]

@@ -1,6 +1,6 @@
 class AmazonImportRowsController < ApplicationController
   def update
-    row = AmazonImportRow.find(params[:id])
+    row = Current.user.amazon_import_rows.find(params[:id])
 
     if params[:commit] == "Skip"
       row.skip!

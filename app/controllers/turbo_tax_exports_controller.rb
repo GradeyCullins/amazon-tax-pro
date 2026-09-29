@@ -33,11 +33,11 @@ class TurboTaxExportsController < ApplicationController
   private
 
   def set_year
-    @year = params[:year].presence&.to_i || AmazonImportRow.where.not(posted_on: nil).maximum("strftime('%Y', posted_on)")&.to_i || Date.current.year
+    @year = params[:year].presence&.to_i || Current.user.amazon_import_rows.where.not(posted_on: nil).maximum("strftime('%Y', posted_on)")&.to_i || Date.current.year
   end
 
   def set_input
-    @input = TurboTaxExportInput.for_year(@year)
+    @input = Current.user.turbo_tax_export_inputs.for_year(@year)
   end
 
   def input_params

@@ -1,0 +1,23 @@
+<div class="card auth-card">
+  <h1>Account</h1>
+  <p class="guide-copy" style="margin-bottom:16px;">Signed in as <strong><%= @user.email_address %></strong>.</p>
+  <p class="guide-copy" style="margin-bottom:16px;">
+    Amazon:
+    <% if @amazon_connection %>
+      connected (seller <%= @amazon_connection.selling_partner_id %>)
+    <% else %>
+      not connected
+    <% end %>
+  </p>
+
+  <h2>Delete account</h2>
+  <p class="guide-copy" style="margin-bottom:16px;">This permanently deletes your account, stored Amazon authorization, imported transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
+
+  <%= form_with url: user_account_path, method: :delete, local: true, html: { onsubmit: "return confirm('Delete your account and all imported data? This cannot be undone.')" } do |form| %>
+    <div class="form-row">
+      <%= form.label :password, "Confirm password" %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+    </div>
+    <%= form.submit "Delete account and data", class: "button danger" %>
+  <% end %>
+</div>

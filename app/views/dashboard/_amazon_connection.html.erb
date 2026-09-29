@@ -1,0 +1,55 @@
+<div class="card connect-card">
+  <% if connection.nil? %>
+    <h2>Connect your Amazon seller account</h2>
+    <p class="guide-copy">
+      Sign in to Seller Central and approve read-only access to your financial transactions. Amazon Tax Pro then imports a full tax year of sales, refunds, and fees for review — no report downloads needed.
+    </p>
+    <div class="connect-meta">
+      <span class="pill">US marketplace</span>
+      <span class="pill">Finance &amp; accounting data only</span>
+    </div>
+    <% if AmazonSpApi.configured? %>
+      <%= link_to "Connect Amazon", new_amazon_connection_path, class: "button" %>
+    <% else %>
+      <p class="muted">Amazon connection is not configured on this server yet. Use a manual file upload for now.</p>
+    <% end %>
+  <% else %>
+    <h2>Amazon seller account</h2>
+    <div class="connect-meta">
+      <% if connection.active? %>
+        <span class="pill good">Connected</span>
+      <% else %>
+        <span class="pill bad">Needs reconnect</span>
+      <% end %>
+      <span class="pill">Seller <%= connection.selling_partner_id %></span>
+      <span class="pill">Last sync: <%= connection.last_synced_at ? l(connection.last_synced_at, format: :short) : "never" %></span>
+    </div>
+
+    <% if connection.last_error.present? %>
+      <div class="callout" style="margin-top:0;"><p><%= connection.last_error %></p></div>
+    <% end %>
+
+    <% if connection.active? %>
+      <%= form_with url: amazon_syncs_path, local: true, class: "inline-form" do |form| %>
+        <%= form.label :tax_year, "Tax year" %>
+        <%= form.select :tax_year, sync_year_options, selected: sync_year_options.second || sync_year_options.first %>
+        <%= form.submit "Sync now", class: "button" %>
+      <% end %>
+      <p class="muted" style="margin-top:12px;">Imports released transactions for the full calendar year (Pacific time). Amazon data can lag up to 48 hours. Re-syncing only adds new transactions and keeps your reviews.</p>
+    <% else %>
+      <%= link_to "Reconnect Amazon", new_amazon_connection_path, class: "button" %>
+    <% end %>
+
+    <% if latest_sync.present? %>
+      <p class="guide-copy" style="margin-top:12px;">
+        Latest sync: <%= link_to latest_sync.filename, amazon_import_batch_path(latest_sync) %>
+        <span class="pill <%= latest_sync.sync_failed? ? "bad" : latest_sync.sync_succeeded? ? "good" : "warn" %>"><%= latest_sync.sync_status.to_s.humanize %></span>
+      </p>
+    <% end %>
+
+    <div style="margin-top:14px;">
+      <%= button_to "Disconnect Amazon", amazon_connection_path, method: :delete, class: "button small secondary",
+            form: { onsubmit: "return confirm('Disconnect Amazon? Imported rows stay, but the stored authorization is deleted.')" } %>
+    </div>
+  <% end %>
+</div>

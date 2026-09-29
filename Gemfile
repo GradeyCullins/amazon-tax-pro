@@ -8,3 +8,6 @@ gem 'csv'
 group :development, :test do
   gem 'debug'
 end
+gem 'bcrypt', '~> 3.1'
+gem 'peddler', '~> 5.0'
+gem 'solid_queue', '~> 1.2'

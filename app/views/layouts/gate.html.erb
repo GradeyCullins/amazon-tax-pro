@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Amazon Tax Pro · Locked</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <style>
+      :root {
+        --ink:#131921;
+        --paper:#f3f3f3;
+        --surface:#ffffff;
+        --primary:#ff9900;
+        --primary-dark:#e47911;
+        --muted:#565959;
+      }
+      * { box-sizing:border-box; }
+      html, body { height:100%; margin:0; }
+      body {
+        align-items:center;
+        background:
+          repeating-linear-gradient(-45deg, rgba(255,153,0,.10) 0 18px, transparent 18px 36px),
+          radial-gradient(circle at 20% 15%, #232f3e 0, var(--ink) 60%);
+        color:var(--ink);
+        display:flex;
+        font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-weight:650;
+        justify-content:center;
+        min-height:100vh;
+        overflow:hidden;
+        padding:24px;
+      }
+      body::before {
+        background:var(--primary);
+        content:"";
+        height:10px;
+        left:0;
+        position:fixed;
+        right:0;
+        top:0;
+      }
+      .ticker {
+        bottom:28px;
+        color:rgba(255,255,255,.08);
+        font-family:ui-serif, Georgia, "Times New Roman", serif;
+        font-size:clamp(60px, 14vw, 170px);
+        font-weight:1000;
+        left:0;
+        line-height:1;
+        pointer-events:none;
+        position:fixed;
+        white-space:nowrap;
+        animation:drift 40s linear infinite;
+      }
+      @keyframes drift { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+      .vault {
+        background:var(--surface);
+        border:5px solid var(--ink);
+        border-radius:10px;
+        box-shadow:12px 12px 0 var(--primary), 12px 12px 0 5px var(--ink);
+        max-width:460px;
+        padding:34px 30px 30px;
+        position:relative;
+        transform:rotate(-1.2deg);
+        width:100%;
+        z-index:1;
+      }
+      .sticker {
+        background:var(--primary);
+        border:4px solid var(--ink);
+        border-radius:999px;
+        font-size:13px;
+        font-weight:1000;
+        letter-spacing:.08em;
+        padding:6px 14px;
+        position:absolute;
+        right:-18px;
+        text-transform:uppercase;
+        top:-20px;
+        transform:rotate(8deg);
+      }
+      .lock {
+        height:74px;
+        margin-bottom:14px;
+        position:relative;
+        width:64px;
+      }
+      .lock::before {
+        border:9px solid var(--ink);
+        border-bottom:0;
+        border-radius:30px 30px 0 0;
+        content:"";
+        height:34px;
+        left:12px;
+        position:absolute;
+        top:0;
+        width:40px;
+      }
+      .lock::after {
+        background:var(--primary);
+        border:5px solid var(--ink);
+        border-radius:8px;
+        bottom:0;
+        box-shadow:4px 4px 0 var(--ink);
+        content:"";
+        height:44px;
+        left:0;
+        position:absolute;
+        width:64px;
+      }
+      h1 {
+        font-family:ui-serif, Georgia, "Times New Roman", serif;
+        font-size:clamp(38px, 9vw, 54px);
+        font-weight:1000;
+        line-height:.95;
+        margin:0 0 10px;
+      }
+      p { color:var(--muted); line-height:1.45; margin:0 0 20px; }
+      label { display:block; font-weight:950; margin-bottom:8px; }
+      input[type="password"] {
+        border:4px solid var(--ink);
+        border-radius:8px;
+        box-shadow:4px 4px 0 rgba(19,25,33,.25);
+        font:inherit;
+        font-size:20px;
+        letter-spacing:.2em;
+        min-height:54px;
+        padding:10px 14px;
+        width:100%;
+      }
+      input[type="password"]:focus { outline:4px solid var(--primary); outline-offset:2px; }
+      .button {
+        appearance:none;
+        background:var(--primary);
+        border:4px solid var(--ink);
+        border-radius:999px;
+        box-shadow:5px 5px 0 var(--ink);
+        color:var(--ink);
+        cursor:pointer;
+        font:inherit;
+        font-size:18px;
+        font-weight:1000;
+        margin-top:18px;
+        min-height:54px;
+        transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+        width:100%;
+      }
+      .button:hover { background:var(--primary-dark); box-shadow:2px 2px 0 var(--ink); transform:translate(3px, 3px); }
+      .flash {
+        background:#f4b4b4;
+        border:4px solid var(--ink);
+        font-weight:950;
+        margin-bottom:18px;
+        padding:10px 12px;
+      }
+      .fine { color:var(--muted); font-size:12px; font-weight:950; margin:16px 0 0; text-transform:uppercase; }
+      @media (prefers-reduced-motion: reduce) { .ticker { animation:none; } }
+    </style>
+  </head>
+  <body>
+    <div class="ticker" aria-hidden="true">AMAZON TAX PRO · PRIVATE BETA · AMAZON TAX PRO · PRIVATE BETA ·</div>
+    <main class="vault">
+      <%= yield %>
+    </main>
+  </body>
+</html>

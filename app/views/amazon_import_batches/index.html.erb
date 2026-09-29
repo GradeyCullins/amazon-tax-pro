@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <h1>Amazon Data</h1>
-    <p class="muted">Amazon transaction reports imported for tax prep review and TurboTax export.</p>
+    <p class="muted">Amazon syncs and uploaded reports imported for tax prep review and TurboTax export.</p>
   </div>
   <div class="actions">
     <%= link_to "TurboTax export", turbo_tax_export_path, class: "button secondary" %>
@@ -13,7 +13,8 @@
   <table class="tight">
     <thead>
       <tr>
-        <th>File</th>
+        <th>Import</th>
+        <th>Source</th>
         <th>Imported</th>
         <th>Rows</th>
         <th>Status</th>
@@ -24,6 +25,7 @@
       <% @batches.each do |batch| %>
         <tr>
           <td><%= batch.filename %></td>
+          <td><span class="pill"><%= batch.source_label %></span><% if batch.source_sp_api? %> <span class="pill <%= batch.sync_failed? ? "bad" : batch.sync_succeeded? ? "good" : "warn" %>"><%= batch.sync_status.to_s.humanize %></span><% end %></td>
           <td><%= l(batch.imported_at, format: :short) %></td>
           <td><%= batch.row_count %></td>
           <td><%= batch.status.humanize %></td>
@@ -31,7 +33,7 @@
         </tr>
       <% end %>
       <% if @batches.empty? %>
-        <tr><td colspan="5">No Amazon transaction files have been imported yet.</td></tr>
+        <tr><td colspan="6">No Amazon data has been imported yet.</td></tr>
       <% end %>
     </tbody>
   </table>

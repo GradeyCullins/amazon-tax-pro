@@ -1,13 +1,39 @@
+<% if @batch.sync_active? %>
+  <% content_for :head do %><meta http-equiv="refresh" content="5"><% end %>
+<% end %>
+
 <div class="page-header">
   <div>
     <h1>Review Amazon Import</h1>
-    <p class="muted"><%= @batch.filename %> · <%= @batch.row_count %> rows · <%= @batch.status.humanize %></p>
+    <p class="muted"><%= @batch.filename %> · <%= @batch.source_label %> · <%= @batch.row_count %> rows · <%= @batch.status.humanize %></p>
   </div>
   <div class="actions">
     <%= link_to "Tax packet", tax_packet_path, class: "button secondary" %>
     <%= link_to "All imports", amazon_import_batches_path, class: "button secondary" %>
   </div>
 </div>
+
+<% if @batch.source_sp_api? %>
+  <div class="card connect-card">
+    <h2>Amazon sync · <%= @batch.tax_year %></h2>
+    <div class="connect-meta">
+      <span class="pill <%= @batch.sync_failed? ? "bad" : @batch.sync_succeeded? ? "good" : "warn" %>"><%= @batch.sync_status.to_s.humanize %></span>
+      <span class="pill"><%= @batch.transactions_fetched %> transactions fetched</span>
+      <span class="pill"><%= @batch.row_count %> new review rows</span>
+      <% if @batch.finished_at %>
+        <span class="pill">Finished <%= l(@batch.finished_at, format: :short) %></span>
+      <% end %>
+    </div>
+    <% if @batch.sync_active? %>
+      <p class="guide-copy">Pulling transactions from Amazon. Amazon limits how fast data can be requested, so a full year can take a few minutes. This page refreshes automatically.</p>
+    <% elsif @batch.sync_failed? %>
+      <div class="callout" style="margin-top:0;"><p><%= @batch.error_message %></p></div>
+      <p class="guide-copy">Rows imported before the error are kept. Fix the issue and run the sync again from the dashboard; already-imported transactions are skipped.</p>
+    <% elsif @batch.row_count.zero? %>
+      <p class="guide-copy">No new transactions were found. Everything for <%= @batch.tax_year %> may already be imported in an earlier sync.</p>
+    <% end %>
+  </div>
+<% end %>
 
 <div class="card">
   <table class="tight">

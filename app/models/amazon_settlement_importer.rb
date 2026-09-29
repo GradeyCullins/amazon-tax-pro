@@ -4,12 +4,13 @@ require "bigdecimal/util"
 class AmazonSettlementImporter
   Result = Struct.new(:batch, :errors, keyword_init: true)
 
-  def self.import!(uploaded_file)
-    new(uploaded_file).import!
+  def self.import!(uploaded_file, user:)
+    new(uploaded_file, user: user).import!
   end
 
-  def initialize(uploaded_file)
+  def initialize(uploaded_file, user:)
     @uploaded_file = uploaded_file
+    @user = user
   end
 
   def import!
@@ -22,14 +23,15 @@ class AmazonSettlementImporter
     parsed_rows = CSV.parse(content, headers: true, col_sep: separator)
     return Result.new(errors: ["The file does not contain a header row."]) if parsed_rows.headers.blank?
 
-    batch = AmazonImportBatch.create!(
+    batch = @user.amazon_import_batches.create!(
+      source: :upload,
       filename: @uploaded_file.original_filename.presence || "amazon-settlement",
       imported_at: Time.current
     )
 
     parsed_rows.each.with_index(header_line_number + 1) do |row, row_number|
       normalize_row(row.to_h).each do |attrs|
-        batch.amazon_import_rows.create!(attrs.merge(source_row_number: row_number, raw_data: row.to_h))
+        batch.amazon_import_rows.create!(attrs.merge(user: @user, source_row_number: row_number, raw_data: row.to_h))
       end
     end
 
@@ -82,7 +84,7 @@ class AmazonSettlementImporter
       description: [transaction_type, amount_type, amount_description].compact_blank.join(" - "),
       marketplace: fetch_value(normalized, "marketplace-name", "marketplace"),
       amount_cents: amount_cents,
-      tax_category: suggest_category(transaction_type, amount_type, amount_description, amount_cents)
+      tax_category: AmazonTaxCategorizer.suggest(transaction_type, amount_type, amount_description, amount_cents)
     }]
   end
 
@@ -125,7 +127,7 @@ class AmazonSettlementImporter
     end
 
     if transaction_type == "Service Fee"
-      category = description.match?(/advertis/i) ? "advertising" : service_fee_category(description)
+      category = description.match?(/advertis/i) ? "advertising" : AmazonTaxCategorizer.service_fee_category(description)
       return [["other transaction fees", parse_amount(fetch_value(row, "other transaction fees", "total")), category]]
     end
 
@@ -142,13 +144,6 @@ class AmazonSettlementImporter
     ]
   end
 
-  def service_fee_category(description)
-    return "fba_fees" if description.match?(/\bfba\b|storage|removal|disposal|inbound/i)
-    return "amazon_fees" if description.match?(/subscription|fee/i)
-
-    "other_business_expenses"
-  end
-
   def fetch_value(row, *keys)
     keys.lazy.map { |key| row[key].to_s.strip.presence }.find(&:present?)
   end
@@ -161,20 +156,5 @@ class AmazonSettlementImporter
     Date.parse(value.to_s)
   rescue ArgumentError, TypeError
     nil
-  end
-
-  def suggest_category(transaction_type, amount_type, amount_description, amount_cents)
-    text = [transaction_type, amount_type, amount_description].compact.join(" ").downcase
-
-    return "advertising" if text.match?(/advertis|sponsored/)
-    return "fba_fees" if text.match?(/\bfba\b|fulfillment|storage|pick.*pack/)
-    return "refunds_returns" if text.match?(/refund|return/) || amount_cents.negative? && text.match?(/principal|product charges|itemprice/)
-    return "shipping" if text.match?(/shipping|postage|freight/)
-    return "reimbursements" if text.match?(/reimbursement/)
-    return "reserves_adjustments" if text.match?(/reserve|adjustment|transfer/)
-    return "amazon_fees" if text.match?(/fee|commission|subscription|closing/)
-    return "gross_sales" if text.match?(/principal|product charges|itemprice|sale/)
-
-    "uncategorized"
   end
 end

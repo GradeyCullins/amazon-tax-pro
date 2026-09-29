@@ -10,7 +10,9 @@ class TurboTaxExportInput < ApplicationRecord
     ending_inventory_cents
   ].freeze
 
-  validates :tax_year, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 2000 }
+  belongs_to :user
+
+  validates :tax_year, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 2000 }, uniqueness: { scope: :user_id }
   validates :business_name, presence: true
   validates(*MONEY_FIELDS, numericality: { only_integer: true, greater_than_or_equal_to: 0 })
 

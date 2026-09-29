@@ -18,6 +18,7 @@ class AmazonImportRow < ApplicationRecord
   REVENUE_CATEGORIES = %w[gross_sales reimbursements].freeze
   EXCLUDED_TAX_CATEGORIES = %w[bank_transfers marketplace_withheld_tax reserves_adjustments].freeze
 
+  belongs_to :user
   belongs_to :amazon_import_batch
   belongs_to :accounting_transaction, class_name: "Transaction", foreign_key: :transaction_id, optional: true
   belongs_to :expense, optional: true
@@ -25,6 +26,7 @@ class AmazonImportRow < ApplicationRecord
   enum :status, { pending: 0, accepted: 1, skipped: 2 }
 
   serialize :raw_data, coder: JSON
+  encrypts :raw_data
 
   validates :source_row_number, :amount_cents, :tax_category, presence: true
   validates :tax_category, inclusion: { in: TAX_CATEGORIES.keys }
@@ -70,7 +72,4 @@ class AmazonImportRow < ApplicationRecord
     update!(status: :skipped)
     amazon_import_batch.refresh_status!
   end
-
-  private
-
 end

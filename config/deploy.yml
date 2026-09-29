@@ -21,6 +21,7 @@ builder:
 env:
   clear:
     TZ: America/Devner
+    SOLID_QUEUE_IN_PUMA: true
   secret:
     - RAILS_MASTER_KEY
 

@@ -39,7 +39,7 @@ class TurboTaxExport
   end
 
   def rows
-    @rows ||= AmazonImportRow.turbotax_ready_for_year(year)
+    @rows ||= input.user.amazon_import_rows.turbotax_ready_for_year(year)
   end
 
   def lines

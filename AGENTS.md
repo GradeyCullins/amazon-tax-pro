@@ -59,6 +59,14 @@ amazon_sp_api:
 - Unlisted public apps allow 25 seller authorizations; up to 10 self-authorizations for testing.
 - Local dev cannot receive the HTTPS redirect. Self-authorize the app in Seller Central, then attach the refresh token in the console:
   `AmazonConnection.connect!(user: User.find_by(email_address: "..."), selling_partner_id: "...", refresh_token: "Atzr|...")`
+- **The connecting seller must be the primary user of a Professional selling account.** Individual-plan accounts cannot authorize apps; Seller Central answers with "You must be the primary user of a Professional selling account to take advantage of apps." This is an Amazon account restriction, not an app bug.
+- `listTransactions` is not a grantless operation, so even the static sandbox (`https://sandbox.sellingpartnerapi-na.amazon.com`) needs a refresh token from an authorized account.
+
+## Deploying
+
+- Kamal builds and tags images by git commit, so **credential changes must be committed before `kamal deploy`**; otherwise production keeps running the previously committed `config/credentials.yml.enc`.
+- Verify which values production actually loaded with:
+  `kamal app exec --reuse 'bin/rails runner "puts Rails.application.credentials.amazon_sp_api[:application_id].to_s.first(18)"'`
 
 ## Security and Compliance
 

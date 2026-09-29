@@ -10,7 +10,6 @@ proxy:
   app_port: 3000
 
 registry:
-  # server: localhost:5555
   username: gradeycullins
   password:
     - KAMAL_REGISTRY_PASSWORD

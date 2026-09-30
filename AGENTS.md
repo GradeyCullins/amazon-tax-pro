@@ -48,6 +48,9 @@ amazon_sp_api:
   application_id: amzn1.sp.solution.xxxx
   lwa_client_id: amzn1.application-oa2-client.xxxx
   lwa_client_secret: xxxx
+  sandbox_lwa_client_id: amzn1.application-oa2-client.xxxx
+  sandbox_lwa_client_secret: xxxx
+  sandbox_refresh_token: Atzr|xxxx
   draft: true   # adds version=beta to the consent URL until the app is published
 ```
 
@@ -60,7 +63,8 @@ amazon_sp_api:
 - Local dev cannot receive the HTTPS redirect. Self-authorize the app in Seller Central, then attach the refresh token in the console:
   `AmazonConnection.connect!(user: User.find_by(email_address: "..."), selling_partner_id: "...", refresh_token: "Atzr|...")`
 - **The connecting seller must be the primary user of a Professional selling account.** Individual-plan accounts cannot authorize apps; Seller Central answers with "You must be the primary user of a Professional selling account to take advantage of apps." This is an Amazon account restriction, not an app bug.
-- `listTransactions` is not a grantless operation, so even the static sandbox (`https://sandbox.sellingpartnerapi-na.amazon.com`) needs a refresh token from an authorized account.
+- Development uses the static sandbox (`https://sandbox.sellingpartnerapi-na.amazon.com`) and the three `sandbox_*` credentials above. Create a Sandbox app in Solution Provider Portal and use View sandbox credentials and Action → Create Token; seller authorization is not required. The development Connect Amazon action creates a per-user sandbox connection, and the refresh token is read directly from credentials. Production continues to use seller authorization and the production LWA credentials.
+- Sandbox sync sends the fixed `listTransactions` sample parameters from Amazon's API model and imports one canned response; its returned `nextToken` is a placeholder. The selected tax year does not change the sample data. Sample rows keep Amazon's original posted dates, so select that year for tax outputs.
 
 ## Deploying
 

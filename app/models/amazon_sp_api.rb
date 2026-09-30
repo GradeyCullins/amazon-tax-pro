@@ -23,7 +23,15 @@ module AmazonSpApi
   end
 
   def configured?
+    if sandbox?
+      return config[:sandbox_lwa_client_id].present? && config[:sandbox_lwa_client_secret].present? && config[:sandbox_refresh_token].present?
+    end
+
     config[:application_id].present? && config[:lwa_client_id].present? && config[:lwa_client_secret].present?
+  end
+
+  def sandbox?
+    Rails.env.development?
   end
 
   def draft?
@@ -61,16 +69,17 @@ module AmazonSpApi
     ensure_configured!
 
     Peddler::LWA.request(
-      client_id: config[:lwa_client_id],
-      client_secret: config[:lwa_client_secret],
-      refresh_token: connection.refresh_token
+      client_id: config[sandbox? ? :sandbox_lwa_client_id : :lwa_client_id],
+      client_secret: config[sandbox? ? :sandbox_lwa_client_secret : :lwa_client_secret],
+      refresh_token: sandbox? ? config[:sandbox_refresh_token] : connection.refresh_token
     ).parse.access_token
   rescue Peddler::Errors::InvalidGrant, Peddler::Errors::Unauthorized => error
     raise AuthorizationRevoked, "Amazon authorization is no longer valid (#{error.message}). Reconnect your Amazon account."
   end
 
   def finances_client(connection, access_token:)
-    Peddler::APIs::Finances20240619.new(AWS_REGIONS.fetch(connection.region), access_token, retries: 5)
+    client = Peddler::APIs::Finances20240619.new(AWS_REGIONS.fetch(connection.region), access_token, retries: 5)
+    sandbox? ? client.sandbox : client
   end
 
   def ensure_configured!

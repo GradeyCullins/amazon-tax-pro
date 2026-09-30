@@ -1,4 +1,7 @@
 <div class="card connect-card">
+  <% if AmazonSpApi.sandbox? %>
+    <div class="callout"><p>Development uses Amazon's sandbox and mock transactions. Each sync fetches the same sample data, regardless of the selected tax year. Rows keep Amazon's sample dates; use that year when reviewing tax outputs.</p></div>
+  <% end %>
   <% if connection.nil? %>
     <h2>Connect your Amazon seller account</h2>
     <p class="guide-copy">

@@ -3,6 +3,9 @@ class AmazonTransactionsSync
   WINDOW_LENGTH = 179.days # listTransactions returns nothing when postedAfter/postedBefore are >180 days apart
   PAGE_DELAY_SECONDS = 2 # listTransactions allows 0.5 requests/second
   ACCESS_TOKEN_TTL = 50.minutes
+  # The static sandbox matches these exact values from Amazon's Finances API model.
+  # Its sample nextToken is a request parameter, not a real pagination cursor.
+  SANDBOX_PARAMETERS = { posted_after: "2023-03-07", next_token: "jehgri34yo7jr9e8f984tr9i4o" }.freeze
   # Still-deferred transactions haven't been released to the seller yet; they show up as DEFERRED_RELEASED once they are.
   SKIPPED_STATUSES = %w[DEFERRED].freeze
   YEARS_OFFERED = 3
@@ -46,6 +49,9 @@ class AmazonTransactionsSync
     year_end = [zone.local(@batch.tax_year + 1, 1, 1), 3.minutes.ago].min
     raise AmazonSpApi::Error, "#{@batch.tax_year} has not started yet." if year_start >= year_end
 
+    # Fetch the canned sandbox response once, regardless of the selected tax year.
+    return [[year_start, year_end]] if AmazonSpApi.sandbox?
+
     windows = []
     window_start = year_start
     while window_start < year_end
@@ -65,6 +71,9 @@ class AmazonTransactionsSync
       @transactions_fetched += transactions.size
       @batch.update_columns(transactions_fetched: @transactions_fetched, row_count: @batch.amazon_import_rows.count, updated_at: Time.current)
 
+      # The static response contains a placeholder nextToken with no follow-up page.
+      break if AmazonSpApi.sandbox?
+
       next_token = page.dig("payload", "nextToken").presence
       break unless next_token
 
@@ -73,11 +82,12 @@ class AmazonTransactionsSync
   end
 
   def list_transactions(posted_after, posted_before, next_token)
-    finances_client.list_transactions(
-      posted_after: posted_after.utc.iso8601,
-      posted_before: posted_before.utc.iso8601,
-      next_token: next_token
-    ).to_h
+    parameters = if AmazonSpApi.sandbox?
+      SANDBOX_PARAMETERS
+    else
+      { posted_after: posted_after.utc.iso8601, posted_before: posted_before.utc.iso8601, next_token: next_token }
+    end
+    finances_client.list_transactions(**parameters).to_h
   rescue Peddler::Errors::Unauthorized, Peddler::Errors::AccessDenied => error
     raise AmazonSpApi::AuthorizationRevoked, "Amazon denied access to financial data (#{error.message}). Reconnect your Amazon account."
   end

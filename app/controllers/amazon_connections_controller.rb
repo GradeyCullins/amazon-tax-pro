@@ -9,6 +9,11 @@ class AmazonConnectionsController < ApplicationController
   before_action -> { response.headers["Referrer-Policy"] = "no-referrer" }, only: %i[login callback]
 
   def new
+    if AmazonSpApi.sandbox?
+      AmazonConnection.connect!(user: Current.user, selling_partner_id: "sandbox-user-#{Current.user.id}", refresh_token: "sandbox-credentials")
+      return redirect_to root_path, notice: "Amazon sandbox connected. Sync a tax year to import mock transactions."
+    end
+
     redirect_to AmazonSpApi.consent_url(state: issue_oauth_state, redirect_uri: callback_amazon_connection_url), allow_other_host: true
   end
 

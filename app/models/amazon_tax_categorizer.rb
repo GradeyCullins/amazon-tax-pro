@@ -55,7 +55,7 @@ module AmazonTaxCategorizer
     return "gross_sales" if type == "Shipment" && text.match?(/Principal|ProductCharges|ItemPrice|Sales|OurPriceRegulatoryFee/i)
 
     # Unknown non-shipment sales paths need review rather than entering Schedule C receipts.
-    return "uncategorized" if type != "Shipment" && text.match?(/\bSales\b/i)
+    return "uncategorized" if type != "Shipment" && text.match?(/\bSales\b|Principal|ProductCharges|ItemPrice|Shipping|GiftWrap/i) && amount_cents.positive?
 
     suggest(type, path.first, path.last, amount_cents)
   end

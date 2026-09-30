@@ -21,5 +21,7 @@ class AmazonTaxCategorizerTest < Minitest::Test
     assert_equal "uncategorized", category("RemovalShipment", "Sales > ProductCharges")
     assert_equal "uncategorized", category("MiscellaneousLedgerAdjustment", "Sales > Other")
     assert_equal "uncategorized", category("Adjustment", "Sales > Shipping")
+    assert_equal "uncategorized", category("Other", "ProductCharges > Principal")
+    assert_equal "uncategorized", category("Adjustment", "Shipping")
   end
 end

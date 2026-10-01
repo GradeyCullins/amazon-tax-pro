@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <h1>Amazon Tax Packet</h1>
-    <p class="muted">Tax prep summary from accepted Amazon settlement rows. Review with a tax professional before filing.</p>
+    <p class="muted">Amazon activity by transaction date for the selected year. Review categories and accepted rows before filing.</p>
   </div>
   <%= link_to "Amazon imports", amazon_import_batches_path, class: "button secondary" %>
 </div>
@@ -9,23 +9,57 @@
 <div class="card">
   <%= form_with url: tax_packet_path, method: :get, local: true, class: "inline-form" do |form| %>
     <%= form.label :year, "Tax year" %>
-    <%= form.number_field :year, value: @year, min: 2000, max: Date.current.year + 1 %>
+    <%= form.select :year, options_for_select(@year_options, @year) %>
     <%= form.submit "Update", class: "button small" %>
   <% end %>
 </div>
 
-<div class="grid cards" style="margin-top:12px;">
+<div class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;"><%= @year %> Amazon activity</h2>
+  <% if @activity.source_label == "Amazon sandbox samples" %>
+    <p class="muted">These totals use Amazon sandbox sample transactions and are for testing only.</p>
+  <% end %>
+  <p class="muted" style="margin-bottom:0;">
+    <%= @activity.source_label %> · <%= number_with_delimiter(@activity.row_count) %> rows included ·
+    <%= number_with_delimiter(@activity.pending_count) %> awaiting review
+    <% if @latest_year_sync %>
+      · Latest <%= @year %> sync: <%= @latest_year_sync.sync_status.humanize %>
+    <% end %>
+  </p>
+  <% if @activity.uncategorized_count.positive? %>
+    <p><%= number_with_delimiter(@activity.uncategorized_count) %> rows still need a category.</p>
+  <% end %>
+  <% if @latest_year_sync&.sandbox_sample? %>
+    <p class="muted">The latest sync used Amazon's fixed sandbox sample. Its transactions appear under their actual sample dates, even if a different tax year was selected for the sync.</p>
+  <% end %>
+  <% if @activity.row_count.zero? %>
+    <p>No imported transactions are dated <%= @year %>. A sandbox sync may contain sample transactions dated in another year.</p>
+  <% end %>
+</div>
+
+<div class="grid cards tax-packet-cards" style="margin-top:12px;">
+  <div class="card">
+    <div class="muted">After-fee revenue</div>
+    <div class="value"><%= number_to_currency(@activity.revenue_cents / 100.0) %></div>
+  </div>
+  <div class="card">
+    <div class="muted">Gross receipts (sales + shipping credits)</div>
+    <div class="value"><%= number_to_currency(@activity.gross_receipts_cents / 100.0) %></div>
+  </div>
   <% AmazonImportRow::TAX_CATEGORIES.each do |category, label| %>
-    <% next if category == "uncategorized" && @totals.fetch(category, 0).zero? %>
+    <% next if category == "uncategorized" && @activity.total_cents(category).zero? %>
+    <% amount_cents = category == "cost_of_goods_sold" ? @cogs_input.cost_of_goods_sold_cents : @activity.total_cents(category) %>
     <div class="card">
-      <div class="muted"><%= label %></div>
-      <div class="value"><%= number_to_currency(@totals.fetch(category, 0) / 100.0) %></div>
+      <div class="muted"><%= category == "shipping" ? "Shipping (net)" : category == "cost_of_goods_sold" ? "Cost of goods sold (manual)" : label %></div>
+      <div class="value"><%= number_to_currency(amount_cents / 100.0) %></div>
     </div>
   <% end %>
 </div>
 
+<p class="muted" style="margin-top:12px;">These are preliminary totals from imported rows, including rows awaiting review. Revenue equals gross receipts minus net refunds and returns, Amazon fees, FBA fees, advertising, and shipping charges. Fee refunds are netted against their fee categories. This after-fee revenue box is a planning subtotal; Schedule C reports gross receipts and expenses separately. Reimbursements, withheld tax, and other business expenses are shown separately. Cost of goods sold comes from the <%= link_to "manual inputs", turbo_tax_export_path(year: @year) %>. Expense and withheld amounts are displayed as positive totals.</p>
+
 <div class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Audit Trail</h2>
+  <h2 style="margin-top:0;">Accepted rows audit trail</h2>
   <table class="tight">
     <thead>
       <tr>
@@ -45,7 +79,7 @@
         </tr>
       <% end %>
       <% if @accepted_rows.empty? %>
-        <tr><td colspan="4">No accepted Amazon settlement rows for <%= @year %>.</td></tr>
+        <tr><td colspan="4">No accepted Amazon rows for <%= @year %>. The preliminary totals above include rows awaiting review.</td></tr>
       <% end %>
     </tbody>
   </table>

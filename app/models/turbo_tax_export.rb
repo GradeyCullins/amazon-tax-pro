@@ -39,13 +39,13 @@ class TurboTaxExport
   end
 
   def rows
-    @rows ||= input.user.amazon_import_rows.turbotax_ready_for_year(year)
+    @rows ||= AmazonYearActivity.new(user: input.user, year: year).rows
   end
 
   def lines
-    grouped = taxable_rows.group_by { |row| CATEGORY_LINES.fetch(row.tax_category) }
+    grouped = taxable_rows.group_by { |row| line_key_for(row) }
     generated = grouped.map do |key, line_rows|
-      amount_cents = line_rows.sum { |row| amount_for_line(row, key) }
+      amount_cents = line_rows.sum(&:amount_cents)
       Line.new(key: key, label: label_for(key), txf_ref: SCHEDULE_C_REFS.fetch(key), amount_cents: amount_cents)
     end
 
@@ -105,7 +105,7 @@ class TurboTaxExport
       csv << ["posted_on", "category", "amount", "schedule_c_line", "description", "source_row_number"]
 
       rows.order(:posted_on, :source_row_number).each do |row|
-        line_key = CATEGORY_LINES[row.tax_category]
+        line_key = line_key_for(row)
         csv << [
           row.posted_on,
           row.tax_category_name,
@@ -142,13 +142,10 @@ class TurboTaxExport
     rows.reject { |row| EXCLUDED_CATEGORIES.include?(row.tax_category) || !CATEGORY_LINES.key?(row.tax_category) }
   end
 
-  def amount_for_line(row, line_key)
-    case line_key
-    when :returns_and_allowances, :advertising, :commissions_and_fees, :other_business_expenses
-      -row.amount_cents.abs
-    else
-      row.amount_cents
-    end
+  def line_key_for(row)
+    return :other_business_expenses if row.tax_category == "shipping" && row.amount_cents.negative?
+
+    CATEGORY_LINES[row.tax_category]
   end
 
   def label_for(key)

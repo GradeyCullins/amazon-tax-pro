@@ -254,6 +254,18 @@
         margin-top:8px;
         overflow-wrap:anywhere;
       }
+      .tax-packet-cards .value {
+        font-size:clamp(20px, 4.2vw, 30px);
+        margin-top:auto;
+        overflow-wrap:normal;
+        padding-top:14px;
+        white-space:nowrap;
+      }
+      .tax-packet-cards > .card {
+        display:flex;
+        flex-direction:column;
+        min-height:112px;
+      }
       .tight {
         border-collapse:separate;
         border-spacing:0;
@@ -273,6 +285,11 @@
       }
       .tight tr:nth-child(even) td { background:var(--surface-soft); }
       .tight tr:hover td { background:var(--surface-muted); }
+      .tight.schedule-c-table { min-width:0; table-layout:fixed; }
+      .schedule-c-table th:first-child,.schedule-c-table td:first-child { width:58px; }
+      .schedule-c-table th:last-child,.schedule-c-table td:last-child { text-align:right; white-space:nowrap; width:112px; }
+      .schedule-c-table .reference-line td { background:var(--surface-soft); }
+      .schedule-c-table .reference-line td:not(:first-child) { font-weight:1000; }
       .bars { display:grid; gap:12px; }
       .bar { align-items:center; display:grid; gap:8px; grid-template-columns:minmax(110px, 1fr) minmax(90px, 2fr); }
       .bar span:first-child { min-width:0; overflow-wrap:anywhere; }
@@ -303,6 +320,69 @@
       .pill.good { background:#c7f0d0; }
       .pill.warn { background:var(--primary); }
       .pill.bad { background:#f4b4b4; }
+      .review-sync { margin-bottom:12px; padding:0; }
+      .review-sync > summary { align-items:center; cursor:pointer; display:flex; flex-wrap:wrap; gap:10px; list-style:none; padding:12px 16px; }
+      .review-sync > summary::-webkit-details-marker { display:none; }
+      .review-sync > summary:focus-visible { outline:4px solid var(--primary); outline-offset:2px; }
+      .review-sync[open] > summary .review-chevron { transform:rotate(90deg); }
+      .review-sync-source { color:var(--muted); font-size:12px; margin-left:auto; }
+      .review-sync-detail { border-top:2px solid var(--border); color:var(--muted); font-size:13px; padding:8px 16px 12px; }
+      .review-sync-detail p { margin:4px 0; }
+      .review-controls { margin-bottom:12px; }
+      .review-controls h2,.review-results h2 { font-size:clamp(23px, 3vw, 31px); margin:0 0 12px; }
+      .review-search { align-items:end; display:flex; flex-wrap:wrap; gap:12px; }
+      .review-search > div { display:grid; gap:5px; }
+      .review-search-field { flex:2 1 290px; }
+      .review-search-field input { width:100%; }
+      .review-amount-field { flex:0 1 135px; }
+      .review-amount-field input { width:100%; }
+      .review-sort-field { flex:0 1 155px; }
+      .review-sort-field select { width:100%; }
+      .review-search label { font-size:13px; }
+      .review-search .button { min-height:42px; }
+      .review-search .review-search-actions { align-items:center; display:flex; flex-wrap:wrap; gap:10px; }
+      .review-filter-hint { color:var(--muted); font-size:12px; font-weight:750; margin:12px 0 0; }
+      .review-filter-error { background:#f4b4b4; border:2px solid var(--border); border-radius:6px; font-size:13px; margin:12px 0 0; padding:8px 10px; }
+      .review-results-heading { align-items:center; display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between; margin-bottom:14px; }
+      .review-results-heading h2 { margin-bottom:5px; }
+      .review-progress-label { margin:0 0 6px; }
+      .review-status-overview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+      .review-status-overview > div { align-items:center; background:var(--surface-soft); border:2px solid var(--border); border-radius:7px; display:flex; gap:8px; justify-content:space-between; padding:8px 12px; }
+      .review-status-overview > div:first-child { background:#ffe2b3; }
+      .review-status-overview span { font-size:12px; }
+      .review-status-overview strong { font-size:19px; }
+      .review-list { display:grid; gap:8px; }
+      .review-order { background:var(--surface-soft); border:2px solid var(--border); border-radius:7px; }
+      .review-order[open] { background:var(--surface); }
+      .review-order > summary { align-items:center; cursor:pointer; display:grid; gap:12px; grid-template-columns:16px minmax(170px,1fr) minmax(160px,1fr) 92px; list-style:none; padding:10px 12px; }
+      .review-order > summary::-webkit-details-marker { display:none; }
+      .review-order > summary:hover { background:var(--surface-muted); }
+      .review-order > summary:focus-visible { outline:4px solid var(--primary); outline-offset:2px; }
+      .review-order[open] > summary .review-chevron { transform:rotate(90deg); }
+      .review-order-categories { color:var(--muted); display:flex; flex-wrap:wrap; font-size:12px; gap:4px 10px; overflow-wrap:anywhere; }
+      .review-order-categories em { background:#ffe2b3; border-radius:4px; color:var(--ink); font-style:normal; font-weight:900; padding:1px 5px; }
+      .review-order > summary .pill { font-size:11px; text-align:center; }
+      .review-order-rows { border-top:2px solid var(--border); display:grid; gap:6px; padding:10px; }
+      .review-row { border:2px solid var(--border); border-radius:7px; background:var(--surface-soft); }
+      .review-row[open] { background:var(--surface); }
+      .review-row summary { align-items:center; cursor:pointer; display:grid; gap:12px; grid-template-columns:16px minmax(160px,1fr) minmax(130px,180px) minmax(90px,125px) 92px; list-style:none; padding:9px 12px; }
+      .review-row summary::-webkit-details-marker { display:none; }
+      .review-row summary:hover { background:var(--surface-muted); }
+      .review-row summary:focus-visible { outline:4px solid var(--primary); outline-offset:2px; }
+      .review-chevron { font-size:19px; line-height:1; transition:transform .12s ease; }
+      .review-row[open] .review-chevron { transform:rotate(90deg); }
+      .review-row-main { display:grid; gap:2px; min-width:0; overflow-wrap:anywhere; }
+      .review-row-main strong { font-size:14px; }
+      .review-row-main small { color:var(--muted); font-size:11px; font-weight:800; }
+      .review-row-category { font-size:13px; }
+      .review-row-amount { font-size:14px; text-align:right; white-space:nowrap; }
+      .review-row .pill { font-size:11px; text-align:center; }
+      .review-row-detail { border-top:2px solid var(--border); padding:10px 14px 14px 40px; }
+      .review-row-detail p { font-size:13px; margin:0 0 7px; overflow-wrap:anywhere; }
+      .review-row-detail .inline-form { margin-top:8px; }
+      .review-row-detail select { max-width:230px; }
+      .review-pages { align-items:center; display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:16px; }
+      .review-pages span { font-size:13px; }
       .button.danger { background:#f4b4b4; color:var(--ink); }
       .button.danger:hover { background:#ee8f8f; }
       .connect-card { border-color:var(--ink); background:linear-gradient(135deg, var(--surface) 0 70%, #ffe2b3 70% 100%); margin-bottom:18px; }
@@ -312,6 +392,18 @@
       li { margin-bottom:8px; }
 
       @media (max-width: 720px) {
+        .review-status-overview { gap:6px; }
+        .review-status-overview > div { align-items:flex-start; flex-direction:column; padding:7px; }
+        .review-status-overview span { font-size:11px; }
+        .review-status-overview strong { font-size:16px; }
+        .review-order > summary { grid-template-columns:16px minmax(0,1fr) auto; gap:7px; }
+        .review-order-categories { grid-column:2 / 4; }
+        .review-order > summary .pill { grid-column:3; grid-row:1; }
+        .review-row summary { grid-template-columns:16px minmax(0,1fr) auto; gap:7px; }
+        .review-row-category { grid-column:2; }
+        .review-row-amount { grid-column:3; grid-row:1; }
+        .review-row .pill { grid-column:3; grid-row:2; }
+        .review-row-detail { padding-left:12px; }
         .shell { padding:16px; }
         .nav { align-items:stretch; gap:8px; transform:none; }
         .nav a { flex:1 1 150px; padding:8px; text-align:center; }

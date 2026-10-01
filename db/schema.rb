@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_060200) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_060300) do
   create_table "accounts", force: :cascade do |t|
     t.integer "balance_cents", default: 0, null: false
     t.datetime "created_at", null: false
@@ -43,6 +43,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_060200) do
     t.datetime "finished_at"
     t.datetime "imported_at", null: false
     t.integer "row_count", default: 0, null: false
+    t.boolean "sandbox_sample", default: false, null: false
     t.integer "source", default: 0, null: false
     t.datetime "started_at"
     t.integer "status", default: 0, null: false

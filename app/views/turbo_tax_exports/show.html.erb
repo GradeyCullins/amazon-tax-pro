@@ -19,8 +19,9 @@
 
 <div class="grid dashboard-main">
   <div class="card">
-    <h2 style="margin-top:0;">Schedule C Preview</h2>
-    <table class="tight">
+    <h2 style="margin-top:0;"><%= @year %> Schedule C Preview</h2>
+    <p class="muted"><%= @activity.source_label %> · <%= number_with_delimiter(@activity.row_count) %> rows included · <%= number_with_delimiter(@activity.pending_count) %> awaiting review</p>
+    <table class="tight schedule-c-table">
       <thead>
         <tr>
           <th>TXF Ref</th>
@@ -29,6 +30,11 @@
         </tr>
       </thead>
       <tbody>
+        <tr class="reference-line">
+          <td>—</td>
+          <td>After-fee revenue (reference)</td>
+          <td><%= number_to_currency(@activity.revenue_cents / 100.0) %></td>
+        </tr>
         <% @export.lines.each do |line| %>
           <tr>
             <td><%= line.txf_ref %></td>
@@ -41,6 +47,7 @@
         <% end %>
       </tbody>
     </table>
+    <p class="muted" style="margin-bottom:0;">After-fee revenue matches the <%= link_to "tax packet for #{@year}", tax_packet_path(year: @year) %>. It is a planning subtotal, not a TXF line. Gross receipts and expenses appear separately below.</p>
   </div>
 
   <div class="card">

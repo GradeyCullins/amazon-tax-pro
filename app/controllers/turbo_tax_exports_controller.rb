@@ -1,6 +1,7 @@
 class TurboTaxExportsController < ApplicationController
   before_action :set_year
   before_action :set_input
+  before_action :set_activity, only: %i[show update]
 
   def show
     @export = TurboTaxExport.new(year: @year, input: @input)
@@ -33,11 +34,16 @@ class TurboTaxExportsController < ApplicationController
   private
 
   def set_year
-    @year = params[:year].presence&.to_i || Current.user.amazon_import_rows.where.not(posted_on: nil).maximum("strftime('%Y', posted_on)")&.to_i || Date.current.year
+    requested_year = params[:year].presence&.to_i
+    @year = requested_year && requested_year.between?(2000, Date.current.year + 1) ? requested_year : AmazonYearActivity.default_year_for(Current.user)
   end
 
   def set_input
     @input = Current.user.turbo_tax_export_inputs.for_year(@year)
+  end
+
+  def set_activity
+    @activity = AmazonYearActivity.new(user: Current.user, year: @year)
   end
 
   def input_params

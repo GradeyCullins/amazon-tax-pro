@@ -5,10 +5,16 @@
 class AmazonConnectionsController < ApplicationController
   STATE_TTL = 15.minutes
 
-  before_action :require_sp_api_configuration, only: %i[new login callback]
+  before_action :require_sp_api_configuration, only: %i[login callback]
+  before_action :require_sp_api_configuration, only: :new, unless: -> { SandboxSeller.user?(Current.user) }
   before_action -> { response.headers["Referrer-Policy"] = "no-referrer" }, only: %i[login callback]
 
   def new
+    if SandboxSeller.user?(Current.user)
+      SandboxSeller.connect!(Current.user)
+      return redirect_to root_path, notice: "Sandbox seller connected. Syncs use built-in sample transactions, not Amazon."
+    end
+
     if AmazonSpApi.sandbox?
       AmazonConnection.connect!(user: Current.user, selling_partner_id: "sandbox-user-#{Current.user.id}", refresh_token: "sandbox-credentials")
       return redirect_to root_path, notice: "Amazon sandbox connected. Sync a tax year to pull in Amazon's sample transactions."

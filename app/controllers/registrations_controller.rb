@@ -10,7 +10,11 @@ class RegistrationsController < ApplicationController
   def create
     @user = User.new(params.require(:user).permit(:email_address, :password, :password_confirmation))
 
-    if @user.save
+    if SandboxSeller.email?(@user.email_address)
+      @user.errors.add(:email_address, "is reserved for the sandbox seller. Sign in instead")
+      flash.now[:alert] = @user.errors.full_messages.to_sentence
+      render :new, status: :unprocessable_entity
+    elsif @user.save
       start_new_session_for @user
       redirect_to after_authentication_url, notice: "Welcome! Next, connect your Amazon seller account."
     else

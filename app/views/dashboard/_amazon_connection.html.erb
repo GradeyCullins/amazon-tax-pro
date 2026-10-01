@@ -1,11 +1,13 @@
 <%# locals: (connection:, active_sync:, year_status:) -%>
 <% year = year_status.year %>
 <div class="card connect-card">
-  <% if AmazonSpApi.sandbox? %>
+  <% if sandbox_seller? %>
+    <div class="callout"><p>You're signed in as the sandbox seller. Syncs use built-in sample transactions for <%= SandboxSeller::BUSINESS_NAME %>, not Amazon, and each tax year has its own data. Re-syncing a year only adds rows you don't have yet.</p></div>
+  <% elsif AmazonSpApi.sandbox? %>
     <div class="callout"><p>Development uses Amazon's sandbox and mock transactions. Each sync fetches the same sample data, whatever tax year you pick. Rows keep Amazon's sample dates, so switch to that year to review them.</p></div>
   <% end %>
 
-  <% if !AmazonSpApi.configured? %>
+  <% if !amazon_connect_available? %>
     <h2>Amazon connection unavailable</h2>
     <p class="guide-copy">Connecting Amazon isn't available right now. You can upload a Seller Central report in the meantime.</p>
     <div class="actions">

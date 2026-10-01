@@ -411,6 +411,7 @@ Keep the gate's token values in sync with the app's.
 | Year boundaries and lag | Calendar year in Pacific time. Amazon can lag up to 48 hours. Re-syncing only adds new transactions and keeps reviews. |
 | Rate limits | "A full year can take a few minutes." |
 | Sandbox (development only) | A callout explains that sample data keeps Amazon's fixed dates whatever year is synced. |
+| Sandbox seller (all environments) | A callout on the connect card says you're signed in as the sandbox seller and syncs use built-in sample transactions, not Amazon. Profile & settings replaces the password and delete forms with a note that it's a shared team login. |
 
 ## 13. Accessibility
 
@@ -484,3 +485,4 @@ Recorded here, not yet fixed:
 | 2026-10-01 | Created this file as the design source of truth. |
 | 2026-10-01 | Merged PR #4 into the sync-first design: signed totals through `AmazonYearActivity` (credits net, shipping charges are expenses), gross receipts plus an after-fee revenue reference, plain-language row labels with Amazon details, and search, amount, and sort filters on Review. Kept accepted-only outputs, the shared tax year, and sync-wins, so the PR's per-import review page, featured priorities list, and API-over-upload source preference were not adopted. Sync runs record `sandbox_sample`, and the tax packet flags sandbox totals. |
 | 2026-10-01 | Merged PR #3 into the sync-first design. Added Profile & settings: display name, business name that prefills new TurboTax export years, a default tax year that `TaxYearContext` uses after an explicit or session year, and a password change that signs out other sessions. Not adopted: the review threshold preference, because Review's minimum amount filter covers it; the Featured review page; `User#effective_tax_year`; and the PR's guide copy. No data download card was added. |
+| 2026-10-01 | Added the sandbox seller: a shared login (`sandbox@amazontaxpro.com`) in every environment, created on first sign-in and pre-connected. Its syncs use the real sync pipeline with a generated, deterministic Finances API client instead of Amazon, so the team can develop without real seller accounts. Its password and account are locked, and sign-up can't claim its email. |

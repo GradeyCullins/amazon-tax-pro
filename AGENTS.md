@@ -31,6 +31,7 @@ Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. The
 - `app/models/amazon_sp_api.rb`: SP-API config, consent URL, LWA token exchange, Finances client.
 - `app/models/amazon_connection.rb`: one per user; refresh token encrypted with Active Record Encryption.
 - `app/models/amazon_transactions_sync.rb` + `app/jobs/amazon_transactions_sync_job.rb`: tax-year backfill via `listTransactions` (≤180-day windows, paginated, rate limited, deduped by `external_id`).
+- `app/models/sandbox_seller.rb` + `app/models/sandbox_seller/`: the shared sandbox seller login, its fake Finances client, and the deterministic per-year transaction generator.
 - `app/models/amazon_transaction_normalizer.rb`: API transaction → import rows (one per leaf breakdown, plus residual row).
 - `app/models/amazon_tax_categorizer.rb`: category rules shared by the CSV importer and the API sync.
 - `app/models/amazon_settlement_importer.rb`: Amazon CSV/TSV parsing (fallback upload).
@@ -79,6 +80,16 @@ amazon_sp_api:
 - **The connecting seller must be the primary user of a Professional selling account.** Individual-plan accounts cannot authorize apps; Seller Central answers with "You must be the primary user of a Professional selling account to take advantage of apps." This is an Amazon account restriction, not an app bug.
 - Development uses the static sandbox (`https://sandbox.sellingpartnerapi-na.amazon.com`) and the three `sandbox_*` credentials above. Create a Sandbox app in Solution Provider Portal and use View sandbox credentials and Action → Create Token; seller authorization is not required. The development Connect Amazon action creates a per-user sandbox connection, and the refresh token is read directly from credentials. Production continues to use seller authorization and the production LWA credentials.
 - Sandbox sync sends the fixed `listTransactions` sample parameters from Amazon's API model and imports one canned response; its returned `nextToken` is a placeholder. The selected tax year does not change the sample data. Sample rows keep Amazon's original posted dates, so select that year for tax outputs.
+
+## Sandbox Seller
+
+- A shared team login in every environment (including production, behind the site gate) with fake but realistic data for "Summit Trail Goods LLC":
+  - Email: `sandbox@amazontaxpro.com`
+  - Password: `sandbox-seller-2026`
+- The account is created on its first sign-in (or with `bin/rails amazon:sandbox_seller:ensure`) and comes pre-connected to Amazon as seller `A3SBX7TRAILGDS`. Sign-up with that email is blocked; its password can't be changed and the account can't be deleted.
+- Clicking **Sync YEAR** runs the normal sync job, normalizer, and categorizer, but `AmazonTransactionsSync` swaps in `SandboxSeller::FinancesClient`, which answers `listTransactions` from `SandboxSeller::TransactionGenerator` (≈1,000 transactions / 5,000 rows per year, paginated, no rate-limit delay). No Amazon credentials or network calls are involved, and this takes precedence over the development static sandbox.
+- Data is deterministic per tax year, so re-syncing only adds missing rows. Each year has a few Uncategorized rows for Review. Sync runs are flagged `sandbox_sample`.
+- Start over with `bin/rails amazon:sandbox_seller:reset` (keeps the login and connection; deletes rows, sync history, and export inputs).
 
 ## Deploying
 

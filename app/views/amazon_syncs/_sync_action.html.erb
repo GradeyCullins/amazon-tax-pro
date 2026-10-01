@@ -1,7 +1,7 @@
 <%# locals: (year:) -%>
 <%# The single next step for getting a year's data in, in sync-first order. -%>
 <% connection = Current.user.amazon_connection %>
-<% if !AmazonSpApi.configured? %>
+<% if !amazon_connect_available? %>
   <%= link_to "Upload a report", new_amazon_import_batch_path, class: "button" %>
 <% elsif connection.nil? %>
   <%= link_to "Connect Amazon", new_amazon_connection_path, class: "button" %>

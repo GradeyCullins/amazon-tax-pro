@@ -6,6 +6,8 @@ class SessionsController < ApplicationController
   end
 
   def create
+    SandboxSeller.ensure_user! if SandboxSeller.email?(params[:email_address])
+
     if user = User.authenticate_by(params.permit(:email_address, :password))
       start_new_session_for user
       redirect_to after_authentication_url

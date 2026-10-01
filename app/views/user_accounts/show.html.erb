@@ -48,6 +48,9 @@
     <div class="card">
       <h2>Security</h2>
       <h3>Change password</h3>
+      <% if sandbox_seller? %>
+      <p class="guide-copy">The sandbox seller is a shared team login, so its password can't be changed.</p>
+      <% else %>
       <%= form_with url: user_account_password_path, scope: :password_change, method: :patch do |form| %>
         <div class="form-row">
           <%= form.label :current_password, "Current password" %>
@@ -64,10 +67,14 @@
         <%= form.submit "Update password", class: "button" %>
       <% end %>
       <p class="note">Changing your password signs you out everywhere else.</p>
+      <% end %>
     </div>
 
     <div class="card">
       <h2>Delete account</h2>
+      <% if sandbox_seller? %>
+      <p class="guide-copy">The sandbox seller is a shared team login, so it can't be deleted. To start over, run <code>bin/rails amazon:sandbox_seller:reset</code>.</p>
+      <% else %>
       <p class="guide-copy">This permanently deletes your account, stored Amazon authorization, synced and uploaded transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
       <%= form_with url: user_account_path, method: :delete, html: { onsubmit: "return confirm('Delete your account and all of its data? This cannot be undone.')" } do |form| %>
         <div class="form-row">
@@ -75,6 +82,7 @@
           <%= form.password_field :password, required: true, autocomplete: "current-password", id: "delete_password" %>
         </div>
         <%= form.submit "Delete account and data", class: "button danger" %>
+      <% end %>
       <% end %>
     </div>
   </div>

@@ -29,6 +29,15 @@ module ApplicationHelper
     query.empty? ? request.path : "#{request.path}?#{query.to_query}"
   end
 
+  def sandbox_seller?
+    SandboxSeller.user?(Current.user)
+  end
+
+  # The sandbox seller can connect and sync even where SP-API credentials aren't configured.
+  def amazon_connect_available?
+    sandbox_seller? || AmazonSpApi.configured?
+  end
+
   def sync_year_range
     years = AmazonTransactionsSync.selectable_tax_years
     "#{years.min}–#{years.max}"

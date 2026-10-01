@@ -44,3 +44,19 @@ namespace :amazon do
     end
   end
 end
+
+namespace :amazon do
+  namespace :sandbox_seller do
+    desc "Create the sandbox seller login if missing and restore its password and connection"
+    task ensure: :environment do
+      user = SandboxSeller.ensure_user!
+      puts "Sandbox seller ready: #{user.email_address} (Amazon connection #{user.amazon_connection.selling_partner_id})."
+    end
+
+    desc "Delete the sandbox seller's synced and uploaded rows, sync history, and export inputs (keeps the login)"
+    task reset: :environment do
+      SandboxSeller.reset!
+      puts "Sandbox seller data cleared. Sign in and sync a tax year to regenerate it."
+    end
+  end
+end

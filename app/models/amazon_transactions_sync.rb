@@ -18,7 +18,10 @@ class AmazonTransactionsSync
     @batch = batch
     @connection = batch.amazon_connection
     @user = batch.user
-    @sleeper = sleeper
+    # The sandbox seller reads generated data; Amazon's static sandbox only applies to other development users.
+    @sandbox_seller = SandboxSeller.connection?(@connection)
+    @static_sandbox = AmazonSpApi.sandbox? && !@sandbox_seller
+    @sleeper = @sandbox_seller ? ->(_seconds) {} : sleeper
   end
 
   def run!
@@ -50,7 +53,7 @@ class AmazonTransactionsSync
     raise AmazonSpApi::Error, "#{@batch.tax_year} has not started yet." if year_start >= year_end
 
     # Fetch the canned sandbox response once, regardless of the selected tax year.
-    return [[year_start, year_end]] if AmazonSpApi.sandbox?
+    return [[year_start, year_end]] if @static_sandbox
 
     windows = []
     window_start = year_start
@@ -72,7 +75,7 @@ class AmazonTransactionsSync
       @batch.update_columns(transactions_fetched: @transactions_fetched, row_count: @batch.amazon_import_rows.count, updated_at: Time.current)
 
       # The static response contains a placeholder nextToken with no follow-up page.
-      break if AmazonSpApi.sandbox?
+      break if @static_sandbox
 
       next_token = page.dig("payload", "nextToken").presence
       break unless next_token
@@ -82,7 +85,7 @@ class AmazonTransactionsSync
   end
 
   def list_transactions(posted_after, posted_before, next_token)
-    parameters = if AmazonSpApi.sandbox?
+    parameters = if @static_sandbox
       SANDBOX_PARAMETERS
     else
       { posted_after: posted_after.utc.iso8601, posted_before: posted_before.utc.iso8601, next_token: next_token }
@@ -112,6 +115,8 @@ class AmazonTransactionsSync
   end
 
   def finances_client
+    return @finances_client ||= SandboxSeller::FinancesClient.new if @sandbox_seller
+
     if @finances_client.nil? || @token_fetched_at < ACCESS_TOKEN_TTL.ago
       @token_fetched_at = Time.current
       @finances_client = AmazonSpApi.finances_client(@connection, access_token: AmazonSpApi.access_token_for(@connection))

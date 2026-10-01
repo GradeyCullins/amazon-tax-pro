@@ -1,5 +1,6 @@
 class UserAccountsController < ApplicationController
   rate_limit to: 10, within: 3.minutes, only: %i[destroy update_password], with: -> { redirect_to user_account_path, alert: "Try again later." }
+  before_action :protect_sandbox_seller, only: %i[destroy update_password]
 
   def show
     @user = Current.user
@@ -53,6 +54,11 @@ class UserAccountsController < ApplicationController
   end
 
   private
+
+  # The team shares this login, so its password and existence stay fixed.
+  def protect_sandbox_seller
+    redirect_to user_account_path, alert: "The sandbox seller's password can't be changed and the account can't be deleted." if SandboxSeller.user?(Current.user)
+  end
 
   def profile_params
     params.require(:user).permit(:display_name, :business_name, :default_tax_year)

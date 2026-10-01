@@ -10,159 +10,118 @@
     <style>
       :root {
         --ink:#131921;
+        --text:#0f1111;
         --paper:#f3f3f3;
         --surface:#ffffff;
+        --border:#d5d9d9;
+        --border-strong:#888c8c;
         --primary:#ff9900;
         --primary-dark:#e47911;
+        --primary-soft:#fff4e0;
+        --primary-line:#f3c27a;
+        --link:#007185;
+        --warn-text:#8a4b00;
+        --bad:#fdecea;
+        --bad-line:#f0b4ad;
         --muted:#565959;
+        --radius:8px;
+        --shadow:0 1px 2px rgba(15,17,17,.08);
       }
       * { box-sizing:border-box; }
-      html, body { height:100%; margin:0; }
+      html { background:var(--paper); }
       body {
-        align-items:center;
-        background:
-          repeating-linear-gradient(-45deg, rgba(255,153,0,.10) 0 18px, transparent 18px 36px),
-          radial-gradient(circle at 20% 15%, #232f3e 0, var(--ink) 60%);
-        color:var(--ink);
-        display:flex;
+        background:var(--paper);
+        color:var(--text);
         font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        font-weight:650;
-        justify-content:center;
-        min-height:100vh;
-        overflow:hidden;
-        padding:24px;
+        font-size:15px;
+        line-height:1.5;
+        margin:0;
       }
-      body::before {
-        background:var(--primary);
-        content:"";
-        height:10px;
-        left:0;
-        position:fixed;
-        right:0;
-        top:0;
+      .app-bar {
+        align-items:center;
+        background:var(--ink);
+        color:#fff;
+        display:flex;
+        min-height:56px;
+        padding:0 32px;
       }
-      .ticker {
-        bottom:28px;
-        color:rgba(255,255,255,.08);
-        font-family:ui-serif, Georgia, "Times New Roman", serif;
-        font-size:clamp(60px, 14vw, 170px);
-        font-weight:1000;
-        left:0;
-        line-height:1;
-        pointer-events:none;
-        position:fixed;
-        white-space:nowrap;
-        animation:drift 40s linear infinite;
-      }
-      @keyframes drift { from { transform:translateX(0); } to { transform:translateX(-50%); } }
-      .vault {
+      .brand { font-size:17px; font-weight:700; letter-spacing:-.01em; }
+      .shell { padding:28px 32px 24px; }
+      .gate-card {
         background:var(--surface);
-        border:5px solid var(--ink);
-        border-radius:10px;
-        box-shadow:12px 12px 0 var(--primary), 12px 12px 0 5px var(--ink);
-        max-width:460px;
-        padding:34px 30px 30px;
-        position:relative;
-        transform:rotate(-1.2deg);
-        width:100%;
-        z-index:1;
+        border:1px solid var(--border);
+        border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        margin:40px auto 0;
+        max-width:440px;
+        padding:20px;
       }
-      .sticker {
-        background:var(--primary);
-        border:4px solid var(--ink);
+      .pill {
+        background:var(--primary-soft);
+        border:1px solid var(--primary-line);
         border-radius:999px;
-        font-size:13px;
-        font-weight:1000;
-        letter-spacing:.08em;
-        padding:6px 14px;
-        position:absolute;
-        right:-18px;
-        text-transform:uppercase;
-        top:-20px;
-        transform:rotate(8deg);
+        color:var(--warn-text);
+        display:inline-block;
+        font-size:12px;
+        font-weight:600;
+        padding:1px 10px;
       }
-      .lock {
-        height:74px;
-        margin-bottom:14px;
-        position:relative;
-        width:64px;
-      }
-      .lock::before {
-        border:9px solid var(--ink);
-        border-bottom:0;
-        border-radius:30px 30px 0 0;
-        content:"";
-        height:34px;
-        left:12px;
-        position:absolute;
-        top:0;
-        width:40px;
-      }
-      .lock::after {
-        background:var(--primary);
-        border:5px solid var(--ink);
-        border-radius:8px;
-        bottom:0;
-        box-shadow:4px 4px 0 var(--ink);
-        content:"";
-        height:44px;
-        left:0;
-        position:absolute;
-        width:64px;
-      }
-      h1 {
-        font-family:ui-serif, Georgia, "Times New Roman", serif;
-        font-size:clamp(38px, 9vw, 54px);
-        font-weight:1000;
-        line-height:.95;
-        margin:0 0 10px;
-      }
-      p { color:var(--muted); line-height:1.45; margin:0 0 20px; }
-      label { display:block; font-weight:950; margin-bottom:8px; }
+      h1 { font-size:24px; font-weight:700; line-height:1.2; margin:10px 0 6px; }
+      p { margin:0 0 16px; }
+      label { display:block; font-size:14px; font-weight:600; margin-bottom:6px; }
       input[type="password"] {
-        border:4px solid var(--ink);
-        border-radius:8px;
-        box-shadow:4px 4px 0 rgba(19,25,33,.25);
+        background:var(--surface);
+        border:1px solid var(--border-strong);
+        border-radius:6px;
+        box-shadow:inset 0 1px 2px rgba(15,17,17,.12);
+        color:var(--text);
         font:inherit;
-        font-size:20px;
-        letter-spacing:.2em;
-        min-height:54px;
-        padding:10px 14px;
+        min-height:36px;
+        padding:6px 10px;
         width:100%;
       }
-      input[type="password"]:focus { outline:4px solid var(--primary); outline-offset:2px; }
+      input[type="password"]:focus { border-color:var(--link); outline:2px solid var(--link); outline-offset:0; }
       .button {
         appearance:none;
         background:var(--primary);
-        border:4px solid var(--ink);
-        border-radius:999px;
-        box-shadow:5px 5px 0 var(--ink);
+        border:1px solid var(--primary-dark);
+        border-radius:var(--radius);
         color:var(--ink);
         cursor:pointer;
         font:inherit;
-        font-size:18px;
-        font-weight:1000;
-        margin-top:18px;
-        min-height:54px;
-        transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
-        width:100%;
+        font-weight:600;
+        margin-top:14px;
+        min-height:36px;
+        padding:6px 14px;
+        transition:background .12s ease;
       }
-      .button:hover { background:var(--primary-dark); box-shadow:2px 2px 0 var(--ink); transform:translate(3px, 3px); }
+      .button:hover { background:var(--primary-dark); }
+      .button:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
       .flash {
-        background:#f4b4b4;
-        border:4px solid var(--ink);
-        font-weight:950;
-        margin-bottom:18px;
-        padding:10px 12px;
+        background:var(--bad);
+        border:1px solid var(--bad-line);
+        border-radius:var(--radius);
+        margin-bottom:16px;
+        padding:10px 14px;
       }
-      .fine { color:var(--muted); font-size:12px; font-weight:950; margin:16px 0 0; text-transform:uppercase; }
-      @media (prefers-reduced-motion: reduce) { .ticker { animation:none; } }
+      .fine { color:var(--muted); font-size:13px; margin:16px 0 0; }
+      .build-info { color:var(--muted); font-size:12px; margin:32px 0 0; text-align:center; }
+      .build-info code { font-size:.9em; }
+      @media (max-width: 720px) {
+        .app-bar, .shell { padding-left:16px; padding-right:16px; }
+        .gate-card { margin-top:16px; padding:16px; }
+      }
     </style>
   </head>
   <body>
-    <div class="ticker" aria-hidden="true">AMAZON TAX PRO · PRIVATE BETA · AMAZON TAX PRO · PRIVATE BETA ·</div>
-    <main class="vault">
-      <%= yield %>
+    <header class="app-bar">
+      <span class="brand">Amazon Tax Pro</span>
+    </header>
+    <main class="shell">
+      <div class="gate-card">
+        <%= yield %>
+      </div>
+      <footer class="build-info">Build <code><%= BuildInfo.id %></code></footer>
     </main>
   </body>
 </html>

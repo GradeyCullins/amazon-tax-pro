@@ -40,6 +40,7 @@ Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. The
 - `app/models/pagination.rb` + `app/views/shared/_pagination.html.erb`: in-house pagination (no gem).
 - `app/models/amazon_year_activity.rb`: signed yearly totals from accepted rows (credits net; gross receipts; after-fee revenue reference), shared by the dashboard, tax packet, and TurboTax export.
 - `app/models/turbo_tax_export.rb`: TXF, audit CSV, and readiness warnings; counts accepted rows only, like the tax packet.
+- `app/models/build_info.rb`: build ID shown in the app layout footer (first 8 characters of `KAMAL_VERSION` in deployed containers, git `HEAD` locally, reread on every request in development).
 - `app/helpers/application_helper.rb`: `money`, `review_pill`, `sync_pill`, `nav_link`, `page_path`, `sync_year_range`.
 - `app/views/shared/`: year switcher, pagination, mixed-source warning partials; `app/views/amazon_syncs/_sync_action.html.erb` picks the next step (upload / connect / reconnect / progress / Sync YEAR).
 - `app/views/dashboard/index.html.erb` + `_amazon_connection.html.erb`: sync-first dashboard and connect/sync card.

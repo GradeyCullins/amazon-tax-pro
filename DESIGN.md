@@ -31,8 +31,9 @@ the code or record the new decision here (see the [decision log](#16-decision-lo
 
 ### Navigation
 
-The nav order is: brand (dashboard) · **Review** · **Tax Packet** · **TurboTax Export** ·
-account email · Sign out.
+The app bar shows, in order: the brand (links to the dashboard) · **Dashboard** · **Review** ·
+**Tax Packet** · **TurboTax Export**, then on the right the display name or email (links to
+Profile & settings) · Sign out.
 
 - The Review link carries a count pill with the number of rows that need review in the
   current year. The pill is hidden when the count is zero.
@@ -142,23 +143,21 @@ link to the progress page instead.
 
 ## 4. Visual language
 
-"Amazon-flavored neo-brutalism":
+"Seller Central professional": calm, dense, and trustworthy, like the tools sellers already use.
 
-- **Palette.** Ink `#131921` (Amazon's header navy-black) with white and gray surfaces, and one
-  accent: Amazon orange `#ff9900`. The only other colors are status colors.
-- **Page.** A 34px grid-paper background and an 8px orange bar across the top of every page.
-- **Edges.** Thick ink borders (3–4px) and hard offset shadows with no blur: 7px on cards, 4px on
-  buttons, callouts, and flashes. Buttons, nav links, pills, and tabs are rounded pills.
-- **Tilt.** Small rotations give a hand-placed sticker-board feel:
-  - nav −0.35°
-  - stat cards cycle through −0.4°, 0.5°, −0.2°, 0.3°
-  - auth card −0.3°
-  - gate vault −1.2° and its sticker 8°
-  - the nav loses its tilt under 720px
-- **Big serif numbers.** Headlines and stat values use a heavy serif. Stat values are orange.
+- **Palette.** Mostly neutral: white cards on a light gray page, gray borders, and near-black
+  text. Ink `#131921` (Amazon's header navy-black) is the app bar. Amazon orange `#ff9900` is
+  reserved for primary buttons, the current-page marker in the app bar, and the Review count.
+  Links are teal `#007185`. Status colors are soft tints with dark text.
+- **Page.** A flat `#f3f3f3` background under a full-width ink app bar.
+- **Edges.** 1px gray borders, an 8px radius, and a barely-there shadow on cards. No offset
+  shadows, no tilts, no hover lift.
+- **Type.** One sans-serif family throughout. Headings and numbers are bold, not oversized.
 
-Before 2026-06-08 the app used a multicolor palette. Commit `b4b2551` moved it to the Amazon
-palette. Keep orange as the only accent.
+History: before 2026-06-08 the app used a multicolor palette; commit `b4b2551` moved it to the
+Amazon palette. On 2026-10-01 the "Amazon-flavored neo-brutalism" look (grid paper, thick ink
+borders, hard offset shadows, tilted cards, giant serif headlines, orange stat values) was
+replaced with this quieter style, and the site gate followed (see section 9).
 
 ## 5. Tokens
 
@@ -166,104 +165,130 @@ All tokens are in `:root` in `app/views/layouts/application.html.erb`.
 
 | Token | Value | Use |
 |---|---|---|
-| `--ink` | `#131921` | Text, borders, shadows, table headers, brand pill |
-| `--paper` | `#f3f3f3` | Page background under the grid |
+| `--ink` | `#131921` | App bar, current tab, brand |
+| `--text` | `#0f1111` | Body text and headings |
+| `--paper` | `#f3f3f3` | Page background |
 | `--surface` | `#ffffff` | Cards, inputs, secondary buttons |
-| `--surface-soft` | `#f7f7f7` | Zebra rows, list items, alternate stat cards |
-| `--surface-muted` | `#e3e6e6` | Neutral pills, callouts, flashes, hover rows |
-| `--border` | `#131921` | Every border (same as ink) |
-| `--primary` | `#ff9900` | Primary buttons, links, stat values, warn pills, focus outline, top bar |
-| `--primary-dark` | `#e47911` | Primary button hover |
-| `--primary-soft` | `#ffe2b3` | `.callout.warn`, connect-card corner |
-| `--good` | `#c7f0d0` | Green pills: counted, done, connected, finished |
-| `--bad` | `#f4b4b4` | Red pills: failed, needs reconnect; danger buttons |
-| `--bad-dark` | `#ee8f8f` | Danger button hover |
-| `--muted` | `#565959` | `.muted` labels, `.note` text |
-| `--shadow` | `7px 7px 0 var(--ink)` | Cards, nav |
-| `--small-shadow` | `4px 4px 0 var(--ink)` | Buttons, callouts, flashes, hover lift |
+| `--surface-soft` | `#f7f8f8` | Table headers, callouts, hover rows, list items |
+| `--surface-muted` | `#eaeded` | Neutral pills, inline `code` |
+| `--border` | `#d5d9d9` | Card, table, pill, and callout borders |
+| `--border-strong` | `#888c8c` | Input and secondary button borders |
+| `--primary` | `#ff9900` | Primary buttons, current app-bar link marker, Review count |
+| `--primary-dark` | `#e47911` | Primary button border and hover |
+| `--primary-soft` | `#fff4e0` | Warn pills, `.callout.warn`, guide steps |
+| `--primary-line` | `#f3c27a` | Borders for the `--primary-soft` surfaces |
+| `--link` | `#007185` | Links, focus outlines, focused input border |
+| `--link-hover` | `#c7511f` | Link hover |
+| `--good` / `--good-line` / `--good-text` | `#e6f4ea` / `#a8d5b5` / `#0d6b2f` | Green pills and notice flashes |
+| `--warn-text` | `#8a4b00` | Text on warn pills and guide steps |
+| `--bad` / `--bad-line` | `#fdecea` / `#f0b4ad` | Red pills and alert flashes |
+| `--bad-dark` / `--bad-darker` | `#b12704` / `#8f1f03` | Red pill text; danger button and its hover |
+| `--muted` | `#565959` | `.muted` labels, `.note` text, page subtitles, table header text |
+| `--radius` | `8px` | Cards, buttons, callouts, flashes |
+| `--shadow` | `0 1px 2px rgba(15,17,17,.08)` | Cards only |
 
 **Status colors.**
 
-| Status | Color | Pill class | Means |
+| Status | Look | Pill class | Means |
 |---|---|---|---|
-| good | green (`--good`) | `.pill.good` | Counted, done, connected, finished |
-| warn | orange (`--primary`) | `.pill.warn` | Needs action or in progress |
-| bad | red (`--bad`) | `.pill.bad` | Failed or needs reconnect |
-| neutral | gray (`--surface-muted`) | `.pill` | Doesn't count or is informational |
+| good | green tint, dark green text | `.pill.good` | Counted, done, connected, finished |
+| warn | orange tint, brown text | `.pill.warn` | Needs action or in progress |
+| bad | red tint, red text | `.pill.bad` | Failed or needs reconnect |
+| neutral | gray | `.pill` | Doesn't count or is informational |
 
-The connect card fills its lower-right corner with a 135° gradient: white to 70%, then
-`--primary-soft`.
-
-New colors become tokens. Don't hardcode hex values in rules.
+New colors become tokens. Don't hardcode hex values in rules. The exceptions are `#fff` text on
+dark fills and the app bar's own grays (`#d5d9d9` link text, `#5a6370` Sign out border,
+`#232f3e` Sign out hover).
 
 ## 6. Typography
 
-- **Display face:** `ui-serif, Georgia, "Times New Roman", serif` at weight 1000, line-height .95.
-  It's used for:
+- **Family:** system sans (`ui-sans-serif, system-ui, …`) everywhere, 15px body at weight 400,
+  line-height 1.5. There is no display serif.
+- **Sizes:**
 
-  | Element | Size |
+  | Element | Size / weight |
   |---|---|
-  | h1 | `clamp(44px, 10vw, 86px)` |
-  | auth-card h1 | `clamp(40px, 8vw, 64px)` |
-  | gate h1 | `clamp(38px, 9vw, 54px)` |
-  | h2 | `clamp(25px, 4vw, 38px)` |
-  | `.value` (stat numbers, orange) | `clamp(28px, 7vw, 42px)` |
-  | `.guide-step` numerals | — |
+  | h1 | 28px / 700 |
+  | auth-card h1 | 24px / 700 |
+  | h2 | 19px / 700 |
+  | h3 | 16px / 600 |
+  | `.value` (stat numbers, ink, tabular) | `clamp(22px, 3vw, 28px)` / 700 |
+  | Buttons, labels, row headers | 600 |
+  | Links | 500, teal, 1px underline |
 
-- **Body face:** system sans (`ui-sans-serif, system-ui, …`), 16px, weight 650.
-  - Labels and links use weight 950. Buttons use weight 1000.
-  - Guide-card h3s use the sans face at 19px.
 - **Text styles:**
-  - `.guide-copy` is the standard paragraph inside cards: 15px, weight 750, ink.
-  - `.note` is a secondary hint under a component: 14px, muted.
+  - `.guide-copy` is the standard paragraph inside cards: 15px, text color.
+  - `.note` is a secondary hint under a component: 13px, muted.
   - `.muted` has two jobs:
-    - an uppercase 12px micro-label, used for stat labels and metadata
-    - inside `.page-header`, a sentence-case 15px ink subtitle
+    - an uppercase 12px micro-label (weight 600, slight tracking), used for stat labels and
+      metadata; table headers use the same style
+    - inside `.page-header`, a sentence-case 15px muted subtitle
 
 ## 7. Layout
 
-- **Shell.** `.shell` is centered with a max width of 1240px and 24px padding (16px under 720px).
+- **App bar.** `.app-bar` spans the full window width with 32px side padding (16px under
+  720px), 56px tall.
+- **Shell.** `.shell` fills the width up to 1920px with 32px side padding (16px under 720px), so
+  content lines up with the app bar on normal screens.
 - **Page header.** `.page-header` puts the h1 and its `.muted` subtitle on the left, and
   `.actions` (year switcher, then secondary links) on the right. It stacks under 720px.
 - **Grids.**
   - `.cards`: auto-fit columns, at least 200px each
   - `.guide-grid`: at least 230px per column
-  - `.dashboard-main`: 2fr / 1fr, one column under 720px
+  - `.dashboard-main`: 2fr / 1fr (min 300px), one column under 720px
 - **Spacing.**
-  - 34px under the nav
-  - 24px under the page header
-  - 18px between cards (`.grid` gap and `.section` margin-top)
-  - 14–18px inside cards
+  - 28px under the app bar
+  - 20px under the page header
+  - 16px between cards (`.grid` gap and `.section` margin-top)
+  - 20px inside cards (14px under 720px)
 - **Card margins.** `.card > :first-child` and `.card > :last-child` lose their outer margins, so
   cards never need spacing hacks.
 
 ## 8. Components
 
-**Nav.** Pill links. The brand link is an ink pill. Links 2–4 are muted, white, and orange, in
-that order.
-- The current page (`aria-current="page"`) sits lifted with the small shadow.
-- `.nav-count` is an ink count bubble inside the Review link.
+**App bar.** `header.app-bar` holds `.brand`, `nav.nav` (`aria-label="Main"`), and `.nav-account`.
+- Nav links are light gray text on ink. The current page (`aria-current="page"`) is white,
+  semibold, with a 3px orange underline.
+- `.nav-count` is a small orange count badge with ink text inside the Review link.
+- `.nav-account` shows the display name or email (underlined when current) and a ghost Sign
+  out button.
 
 **Cards.**
 
 | Card | Built from | Notes |
 |---|---|---|
-| Card | `.card` | White panel with a 4px ink border, 8px radius, and the big shadow. Scrolls wide tables horizontally. |
+| Card | `.card` | White panel with a 1px gray border, 8px radius, and the subtle shadow. Scrolls wide tables horizontally. |
 | Stat card | `.card` with a `.muted` label and a `.value` | Used in `.cards` grids. Labels on year-scoped pages start with the year. |
-| Guide card | `.card.guide-card` with a `.guide-step` | Numbered steps for "How it works". The step is an ink circle with a serif numeral. |
-| Connect card | `.card.connect-card` | The Amazon card on the dashboard and run details. `.connect-meta` holds its pills. |
-| Auth card | `.card.auth-card` | Narrow (520px), tilted card for sign-in and sign-up. |
+| Guide card | `.card.guide-card` with a `.guide-step` | Numbered steps for "How it works". The step is a small orange-tint circle. |
+| Connect card | `.card.connect-card` | The Amazon card on the dashboard and run details. See below. |
+| Auth card | `.card.auth-card` | Narrow (440px) centered card for sign-in and sign-up. |
 | Empty state | `.empty-state` | Says what's missing and offers the one next step. Can be a card or sit inside one. |
+
+**Connect card layout.** Every state uses the same structure:
+- an optional sandbox `.callout` at the top
+- `.connect-header`: the h2 and `.connect-meta` (status pills, seller ID, last-sync note) on the
+  left; `.actions` on the right with secondary actions first and the one primary action last
+  (e.g. Sync history, then **Sync 2025**)
+- body copy or an error `.callout`
+- `.connect-footer`: a top-ruled row with the `.note` on the left and **Disconnect Amazon**
+  (small secondary) on the right, shown whenever a connection exists
+
+**Build ID footer.** `.build-info` at the bottom of every page, including the gate, shows
+"Build" and the first 8 characters of the running commit from `BuildInfo.id`, in small muted text.
 
 **Buttons.** Use `link_to … class: "button"` for navigation and `button_to` for anything that
 changes state.
 
 | Class | Use |
 |---|---|
-| `.button` | Primary: orange. Use at most one per area. |
-| `.button.secondary` | White, for other actions. |
+| `.button` | Primary: orange with a darker orange border. Use at most one per area. |
+| `.button.secondary` | White with a gray border, for other actions. |
 | `.button.small` | Inside tables, filters, and pagination. |
-| `.button.danger` | Red. Destructive actions only, always behind `confirm()` or a confirmation page. |
+| `.button.danger` | Solid red with white text. Destructive actions only, always behind `confirm()` or a confirmation page. |
+
+All buttons have an 8px radius, a 1px border, and change background on hover (no lift). In
+Review rows only **Accept** (rows that need review) is primary; Save, Skip, and Restore are
+secondary, so a page of rows isn't a wall of orange.
 
 **Pills** (`.pill`, `.good` / `.warn` / `.bad`).
 - Always choose colors through the helpers: `review_pill(review_status)` and
@@ -275,20 +300,23 @@ changes state.
 - Source pills (Amazon sync / Upload) are always gray.
 
 **Callouts and flashes.**
-- `.callout` is neutral: errors from Amazon, the sandbox notice.
-- `.callout.warn` (orange-soft) needs attention: mixed sources, a sync in progress, rows not
+- Callouts and flashes have a 1px border, 8px radius, and no shadow.
+- `.callout` is neutral (soft gray): errors from Amazon, the sandbox notice.
+- `.callout.warn` (orange tint) needs attention: mixed sources, a sync in progress, rows not
   included yet, no rows for the year.
 - `.callout .actions` adds spacing for buttons inside a callout.
-- `.flash` is the notice after an action. `.flash.alert` is an error.
+- `.flash` is the notice after an action (green tint). `.flash.alert` is an error (red tint).
 
 **Forms.**
 - `.form-row` stacks a label over a field (max 520px). `.inline-form` puts controls in one row.
 - `.row-form` is the per-row category form on Review. It doesn't wrap on desktop and wraps
   under 720px.
-- Inputs and selects have a 3px ink border, a soft shadow, and a 4px orange focus outline.
+- Inputs and selects have a 1px `--border-strong` border, a faint inset shadow, and a 2px teal
+  focus outline.
 
 **Tables (`.tight`).**
-- Ink header row, 3px ink row rules, zebra striping, and hover highlight.
+- Soft gray header row with uppercase muted labels, 1px gray row rules, and a soft hover
+  highlight. No zebra striping. Row headers (`th scope="row"`) are semibold.
 - Headers use `scope="col"`. Checklist row labels use `th scope="row"`.
 
 **Shared partials.**
@@ -304,7 +332,7 @@ changes state.
 Pagination is 100 rows per page.
 
 **Review controls.**
-- `.tabs` are status filter links with `.tab-count`. The current tab is filled ink.
+- `.tabs` are 1px-bordered pill links with `.tab-count`. The current tab is filled ink.
 - `.filters` holds the `.review-search` form (search, category, amount range, sort), the
   amount hint, and the "Only rows from <sync or upload>" note. Bad amounts show a `.callout.warn`.
 - `.row-details` is a `<details>` disclosure inside a table cell, with a `dl` of Amazon fields.
@@ -314,30 +342,26 @@ of goods sold, Export. Each row has a pill and one sentence with a link.
 
 ## 9. Gate page
 
-`app/views/layouts/gate.html.erb` is its own layout with a duplicated subset of the tokens.
+`app/views/layouts/gate.html.erb` is its own layout (the app layout needs a signed-in context),
+but it looks like the sign-in page:
 
-- **Background.** An ink radial gradient with 10% orange diagonal stripes, plus a 10px fixed
-  orange top bar.
-- **Vault card.** White, with a 5px ink border and a double offset shadow (orange, then ink),
-  rotated −1.2°.
-- **Decoration.**
-  - an orange "Private beta" sticker, rotated 8°
-  - a CSS-only padlock (`.lock`)
-  - a huge "AMAZON TAX PRO · PRIVATE BETA" ticker at 8% white, drifting on a 40s loop. It
-    stops under `prefers-reduced-motion` and is `aria-hidden`.
-- **Button.** It presses *in* on hover (translates 3px, shadow shrinks), unlike the app's lift.
-- **Alert flash.** Red on the gate.
+- The ink app bar with the brand only (no nav or account links).
+- A centered 440px `.gate-card` with the same border, radius, and shadow as `.card`.
+- A `.pill` "Private beta" (warn tint), the h1 "Enter the access password", and one sentence
+  saying the device stays unlocked for 30 days.
+- The red-tinted `.flash` for a wrong password (`role="alert"`), the standard input and orange
+  primary **Unlock** button, a muted `.fine` line, and the build ID footer.
 
-Keep the gate's token values in sync with the app's.
+The gate copies the tokens it uses. Keep their values identical to the app's `:root`.
 
 ## 10. Motion and interaction
 
-- **Hover lift.** Nav links and buttons hover with `translate(-2px, -2px) rotate(-1deg)` and the
-  small shadow, `.12s ease`. The current nav page stays lifted without rotation.
+- **Hover.** Buttons and links change color only (`.12s ease` on buttons). Nothing lifts,
+  rotates, or moves.
 - **No JavaScript.** No JS, no Turbo, no CSS framework. Full page loads and plain forms.
 - **Destructive actions.**
-  - `.button.danger` with `onsubmit="return confirm(…)"`: disconnect, delete upload, delete
-    account.
+  - `.button.danger` with `onsubmit="return confirm(…)"`: delete upload, delete account.
+    Disconnect uses a small secondary button with the same `confirm()`.
   - A dedicated confirmation page when the consequences need explaining: removing uploaded rows
     before a sync. It lists what will be removed.
 - **After actions.** Row actions return to the same filtered page. Starting a sync returns to the
@@ -346,16 +370,16 @@ Keep the gate's token values in sync with the app's.
 ## 11. Responsive
 
 **Under 720px:**
-- The shell padding drops to 16px.
-- The nav loses its tilt, and its links flex to fill rows.
-- The page header stacks, and `.actions` go full width with buttons flexing.
-- `.dashboard-main` and `.guide-grid` become one column.
+- The app bar and shell padding drop to 16px.
+- The nav moves to its own row under the brand and account, and scrolls sideways if needed.
+- The page header stacks, and `.actions` go full width with buttons flexing (the connect card's
+  actions too).
+- `.dashboard-main`, `.profile-grid`, and `.guide-grid` become one column.
 - Tables get a 640px minimum width and scroll inside their card.
 - Inline forms stretch, and row forms wrap.
 
 **Under 460px:**
-- Stat cards become one column.
-- Every button is full width.
+- Stat cards become one column, and buttons go full width (except Sign out).
 
 ## 12. Content and voice
 
@@ -415,16 +439,19 @@ Keep the gate's token values in sync with the app's.
 
 ## 13. Accessibility
 
-- **Focus.** Inputs and selects get a 4px orange outline with a 2px offset.
-- **Current page.** `aria-current="page"` marks the current nav link and filter tab, styled with
-  the lift and an ink fill so color isn't the only cue.
+- **Focus.** Inputs and selects get a 2px teal outline and border. Links, buttons, and
+  `summary` get a 2px teal `:focus-visible` outline with a 2px offset.
+- **Current page.** `aria-current="page"` marks the current nav link (white, semibold, orange
+  underline), the account link (underlined), and the filter tab (ink fill), so color isn't the
+  only cue.
+- **Contrast.** Teal links (`#007185`) and muted text (`#565959`) meet WCAG AA on white.
 - **Labels.**
   - Status is never shown by color alone: pills always have text.
   - The nav count has screen-reader text: "rows need review".
   - Row category selects have `aria-label="Tax category"` and unique ids.
   - Tab and pagination `nav`s have `aria-label`s.
 - **Tables.** Every table header has a `scope`.
-- **Motion.** The gate ticker is `aria-hidden` and stops for `prefers-reduced-motion`.
+- **Motion.** Nothing animates beyond short color transitions, so no reduced-motion rule is needed.
 
 ## 14. Implementation conventions
 
@@ -432,9 +459,7 @@ Keep the gate's token values in sync with the app's.
   Gate CSS is in `layouts/gate.html.erb`. There is no asset-pipeline CSS and no JS.
 - **Adding CSS.** Reuse existing classes before adding new ones. New colors become tokens. No
   inline `style=""` attributes; none remain in `app/views`.
-- **Nav order.** Nav link colors use `:first-child` and `:nth-child(2–4)`, so they depend on
-  link order. Adding or reordering nav links means updating those rules. `.nav a:first-child`
-  also matches the account email link (the first child of `.nav-account`).
+- **Nav.** Nav links are styled uniformly, so adding or reordering them needs no CSS changes.
 - **Partials.** Shared partials declare strict locals (`<%# locals: (...) -%>`).
 - **Helpers.** View helpers live in `ApplicationHelper`: `money`, `review_pill`, `sync_pill`,
   `nav_link`, `nav_review_count`, `page_path`, `sync_year_range`.
@@ -446,24 +471,16 @@ Keep the gate's token values in sync with the app's.
 
 Recorded here, not yet fixed:
 
-- **Link contrast.** Orange link text (`#ff9900`) on white is about 2:1, below WCAG AA (4.5:1).
-  Consider ink links with an orange underline.
-- **Focus.** Buttons and links use the browser's default focus ring, not a designed one.
-- **Reduced motion.** The app layout has no `prefers-reduced-motion` rule for the hover lift and
-  card tilts.
-- **Unused CSS.** `.bars` / `.bar` and `turbo-frame.card`.
-- **Hardcoded colors outside the tokens:**
-  - `.flash.alert` `#d1d5db`
-  - the fourth stat card `#f3f4f6`
-  - the input shadow `rgba(17,24,39,.2)`, the old palette's ink
-- **Alert flashes.** `.flash.alert` is gray in the app, so alerts barely differ from notices. On
-  the gate it's red.
-- **Account nav link.** The display name or email link inherits the brand's 20px ink pill style through
-  `.nav a:first-child`.
-- **Duplicated tokens.** The gate layout copies a subset of the tokens.
+- **Duplicated tokens.** The gate layout copies the tokens and base styles it uses from the app
+  layout. Changing a shared token means editing both files.
 - **Favicon.** `public/favicon.png` is 1254×1254 and about 1.1 MB. It should be a small icon
   plus an apple-touch icon.
 - **Stale branding.** The TXF header still names the program "Accounting Demo".
+
+Fixed in the 2026-10-01 visual refresh: orange link contrast, the default button focus ring,
+hover lift and tilts without a reduced-motion rule, unused `.bars`/`.bar`/`turbo-frame.card`
+CSS, hardcoded stat-card and alert colors, gray alert flashes, and the account link inheriting
+the brand pill style.
 
 ## 16. Decision log
 
@@ -486,3 +503,5 @@ Recorded here, not yet fixed:
 | 2026-10-01 | Merged PR #4 into the sync-first design: signed totals through `AmazonYearActivity` (credits net, shipping charges are expenses), gross receipts plus an after-fee revenue reference, plain-language row labels with Amazon details, and search, amount, and sort filters on Review. Kept accepted-only outputs, the shared tax year, and sync-wins, so the PR's per-import review page, featured priorities list, and API-over-upload source preference were not adopted. Sync runs record `sandbox_sample`, and the tax packet flags sandbox totals. |
 | 2026-10-01 | Merged PR #3 into the sync-first design. Added Profile & settings: display name, business name that prefills new TurboTax export years, a default tax year that `TaxYearContext` uses after an explicit or session year, and a password change that signs out other sessions. Not adopted: the review threshold preference, because Review's minimum amount filter covers it; the Featured review page; `User#effective_tax_year`; and the PR's guide copy. No data download card was added. |
 | 2026-10-01 | Added the sandbox seller: a shared login (`sandbox@amazontaxpro.com`) in every environment, created on first sign-in and pre-connected. Its syncs use the real sync pipeline with a generated, deterministic Finances API client instead of Amazon, so the team can develop without real seller accounts. Its password and account are locked, and sign-up can't claim its email. |
+| 2026-10-01 | Added a build ID footer to the app layout: the first 8 characters of the running commit (Kamal's `KAMAL_VERSION` in production, git `HEAD` locally) so the team can tell which build is live. |
+| 2026-10-01 | **Visual refresh.** Replaced the neo-brutalist look with a quieter Seller Central style: full-width ink app bar with a Dashboard link and orange current-page underline, content up to 1920px wide, 1px gray borders, subtle card shadow, no tilts/grid paper/hover lift, sans-serif headings, ink stat values, teal links, tinted status pills and flashes. The connect card now uses a header (title and status left, actions right) and a footer (note and Disconnect). Review row Save/Restore became secondary buttons. The site gate dropped its "vault" look (ticker, tilt, sticker, padlock) and now matches the sign-in page with the app bar and build ID footer. |

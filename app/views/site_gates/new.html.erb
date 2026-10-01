@@ -1,10 +1,9 @@
-<span class="sticker">Private beta</span>
-<div class="lock" aria-hidden="true"></div>
-<h1>Amazon Tax Pro is locked.</h1>
-<p>Enter the access password to continue. This device stays unlocked for 30 days.</p>
+<span class="pill">Private beta</span>
+<h1>Enter the access password</h1>
+<p>Amazon Tax Pro is in private beta. This device stays unlocked for 30 days.</p>
 
 <% if alert.present? %>
-  <div class="flash"><%= alert %></div>
+  <div class="flash" role="alert"><%= alert %></div>
 <% end %>
 
 <%= form_with url: site_gate_path, local: true do |form| %>

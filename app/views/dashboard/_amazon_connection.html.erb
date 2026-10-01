@@ -8,72 +8,97 @@
   <% end %>
 
   <% if !amazon_connect_available? %>
-    <h2>Amazon connection unavailable</h2>
+    <div class="connect-header">
+      <h2>Amazon connection unavailable</h2>
+      <div class="actions">
+        <%= link_to "Upload a report", new_amazon_import_batch_path, class: "button" %>
+      </div>
+    </div>
     <p class="guide-copy">Connecting Amazon isn't available right now. You can upload a Seller Central report in the meantime.</p>
-    <div class="actions">
-      <%= link_to "Upload a report", new_amazon_import_batch_path, class: "button" %>
-    </div>
   <% elsif connection.nil? %>
-    <h2>Connect your Amazon seller account</h2>
+    <div class="connect-header">
+      <div>
+        <h2>Connect your Amazon seller account</h2>
+        <div class="connect-meta">
+          <span class="pill">US marketplace</span>
+          <span class="pill">Read-only financial data</span>
+          <span class="pill">Professional selling plan</span>
+        </div>
+      </div>
+      <div class="actions">
+        <%= link_to "Connect Amazon", new_amazon_connection_path, class: "button" %>
+      </div>
+    </div>
     <p class="guide-copy">Approve read-only access to your financial transactions in Seller Central. We sync a full tax year of sales, refunds, and fees and categorize them for you, with no reports to download.</p>
-    <div class="connect-meta">
-      <span class="pill">US marketplace</span>
-      <span class="pill">Read-only financial data</span>
-      <span class="pill">Professional selling plan</span>
+    <div class="connect-footer">
+      <p class="note">The seller account's primary user has to approve the connection. Can't connect? <%= link_to "Upload a report instead", new_amazon_import_batch_path %>.</p>
     </div>
-    <div class="actions">
-      <%= link_to "Connect Amazon", new_amazon_connection_path, class: "button" %>
-    </div>
-    <p class="note">The seller account's primary user has to approve the connection. Can't connect? <%= link_to "Upload a report instead", new_amazon_import_batch_path %>.</p>
   <% elsif !connection.active? %>
-    <h2>Reconnect Amazon</h2>
-    <div class="connect-meta">
-      <span class="pill bad">Needs reconnect</span>
-      <span class="pill">Seller <%= connection.selling_partner_id %></span>
+    <div class="connect-header">
+      <div>
+        <h2>Reconnect Amazon</h2>
+        <div class="connect-meta">
+          <span class="pill bad">Needs reconnect</span>
+          <span class="pill">Seller <%= connection.selling_partner_id %></span>
+        </div>
+      </div>
+      <div class="actions">
+        <%= link_to "Reconnect Amazon", new_amazon_connection_path, class: "button" %>
+      </div>
     </div>
     <% if connection.last_error.present? %>
       <div class="callout"><p><%= connection.last_error %></p></div>
     <% end %>
     <p class="guide-copy">Amazon stopped accepting our access. Reconnect to keep syncing; rows you already synced stay.</p>
-    <div class="actions">
-      <%= link_to "Reconnect Amazon", new_amazon_connection_path, class: "button" %>
-    </div>
   <% elsif active_sync %>
-    <h2>Syncing <%= active_sync.tax_year %> from Amazon</h2>
-    <div class="connect-meta">
-      <%= sync_pill(active_sync) %>
-      <span class="pill"><%= pluralize(number_with_delimiter(active_sync.transactions_fetched.to_i), "transaction") %> fetched</span>
-      <span class="pill"><%= pluralize(number_with_delimiter(active_sync.row_count), "new row") %></span>
+    <div class="connect-header">
+      <div>
+        <h2>Syncing <%= active_sync.tax_year %> from Amazon</h2>
+        <div class="connect-meta">
+          <%= sync_pill(active_sync) %>
+          <span class="pill"><%= pluralize(number_with_delimiter(active_sync.transactions_fetched.to_i), "transaction") %> fetched</span>
+          <span class="pill"><%= pluralize(number_with_delimiter(active_sync.row_count), "new row") %></span>
+        </div>
+      </div>
+      <div class="actions">
+        <%= link_to "View sync details", amazon_import_batch_path(active_sync), class: "button secondary" %>
+      </div>
     </div>
     <p class="guide-copy">Amazon limits how fast data can be requested, so a full year can take a few minutes. This page refreshes on its own, and it's fine to leave it.</p>
-    <div class="actions">
-      <%= link_to "View sync details", amazon_import_batch_path(active_sync), class: "button secondary" %>
-    </div>
   <% else %>
-    <h2>Amazon seller account</h2>
-    <div class="connect-meta">
-      <span class="pill good">Connected</span>
-      <span class="pill">Seller <%= connection.selling_partner_id %></span>
+    <div class="connect-header">
+      <div>
+        <h2>Amazon seller account</h2>
+        <div class="connect-meta">
+          <span class="pill good">Connected</span>
+          <span class="pill">Seller <%= connection.selling_partner_id %></span>
+          <% if (latest_sync = year_status.latest_sync) %>
+            <span class="note">Last <%= year %> sync <%= link_to l(latest_sync.created_at, format: :short), amazon_import_batch_path(latest_sync) %></span>
+            <%= sync_pill(latest_sync) %>
+          <% else %>
+            <span class="note">You haven't synced <%= year %> yet.</span>
+          <% end %>
+        </div>
+      </div>
+      <div class="actions">
+        <%= link_to "Sync history", amazon_import_batches_path, class: "button secondary" %>
+        <%= render "amazon_syncs/sync_action", year: year %>
+      </div>
     </div>
     <% if connection.last_error.present? %>
       <div class="callout"><p><%= connection.last_error %></p></div>
     <% end %>
-    <p class="guide-copy">
-      <% if (latest_sync = year_status.latest_sync) %>
-        Last <%= year %> sync: <%= link_to l(latest_sync.created_at, format: :short), amazon_import_batch_path(latest_sync) %> <%= sync_pill(latest_sync) %>
-      <% else %>
-        You haven't synced <%= year %> yet.
-      <% end %>
-    </p>
-    <div class="actions">
-      <%= render "amazon_syncs/sync_action", year: year %>
-      <%= link_to "Sync history", amazon_import_batches_path, class: "button secondary" %>
-    </div>
-    <p class="note">A sync pulls every released transaction for the calendar year (Pacific time), and Amazon can lag up to 48 hours. Syncing again only adds new transactions and keeps your reviews.</p>
   <% end %>
 
   <% if connection %>
-    <div class="section">
+    <div class="connect-footer">
+      <p class="note">
+        <% if connection.active? && !active_sync %>
+          A sync pulls every released transaction for the calendar year (Pacific time), and Amazon can lag up to 48 hours. Syncing again only adds new transactions and keeps your reviews.
+        <% else %>
+          Disconnecting deletes the stored authorization. Rows you already synced stay.
+        <% end %>
+      </p>
       <%= button_to "Disconnect Amazon", amazon_connection_path, method: :delete, class: "button small secondary",
             form: { onsubmit: "return confirm('Disconnect Amazon? Rows you already synced stay, but we delete the stored authorization.')" } %>
     </div>

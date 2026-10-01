@@ -151,9 +151,9 @@
                 <%= form_with model: row, url: amazon_import_row_path(row), class: "inline-form row-form" do |form| %>
                   <%= form.select :tax_category, AmazonImportRow.category_options, {}, id: dom_id(row, :tax_category), aria: { label: "Tax category" } %>
                   <% if row.skipped? %>
-                    <%= form.submit "Restore", class: "button small" %>
+                    <%= form.submit "Restore", class: "button small secondary" %>
                   <% else %>
-                    <%= form.submit row.pending? ? "Accept" : "Save", class: "button small" %>
+                    <%= form.submit row.pending? ? "Accept" : "Save", class: row.pending? ? "button small" : "button small secondary" %>
                     <%= form.submit "Skip", class: "button small secondary" %>
                   <% end %>
                 <% end %>

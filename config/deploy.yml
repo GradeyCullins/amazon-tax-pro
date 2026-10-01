@@ -19,7 +19,7 @@ builder:
 
 env:
   clear:
-    TZ: America/Devner
+    TZ: America/Denver
     SOLID_QUEUE_IN_PUMA: true
   secret:
     - RAILS_MASTER_KEY

@@ -8,84 +8,153 @@
     <p class="muted"><%= @batch.filename %> · <%= @batch.source_label %> · <%= @batch.row_count %> rows · <%= @batch.status.humanize %></p>
   </div>
   <div class="actions">
-    <%= link_to "Tax packet", tax_packet_path, class: "button secondary" %>
+    <%= link_to "Tax packet", tax_packet_path(year: @batch.tax_year || @batch.amazon_import_rows.where.not(posted_on: nil).minimum(:posted_on)&.year), class: "button secondary" %>
     <%= link_to "All imports", amazon_import_batches_path, class: "button secondary" %>
   </div>
 </div>
 
 <% if @batch.source_sp_api? %>
-  <div class="card connect-card">
-    <h2>Amazon sync · <%= @batch.tax_year %></h2>
-    <% if AmazonSpApi.sandbox? %>
-      <p class="guide-copy">Sandbox sample data uses Amazon's fixed dates, regardless of the selected tax year. Re-syncing skips sample rows already imported.</p>
-    <% end %>
-    <div class="connect-meta">
+  <details class="card review-sync" <%= "open" if @batch.sync_active? || @batch.sync_failed? %>>
+    <summary>
+      <span class="review-chevron" aria-hidden="true">▸</span>
+      <strong>Amazon sync · <%= @batch.tax_year %></strong>
       <span class="pill <%= @batch.sync_failed? ? "bad" : @batch.sync_succeeded? ? "good" : "warn" %>"><%= @batch.sync_status.to_s.humanize %></span>
-      <span class="pill"><%= @batch.transactions_fetched %> transactions fetched</span>
-      <span class="pill"><%= @batch.row_count %> new review rows</span>
-      <% if @batch.finished_at %>
-        <span class="pill">Finished <%= l(@batch.finished_at, format: :short) %></span>
+      <span class="review-sync-source"><%= AmazonSpApi.sandbox? ? "Sandbox sample" : "Historical Amazon data" %> · <%= number_with_delimiter(@batch.row_count) %> review rows</span>
+    </summary>
+    <div class="review-sync-detail">
+      <p><%= number_with_delimiter(@batch.transactions_fetched) %> transactions fetched<% if @batch.finished_at %> · Finished <%= l(@batch.finished_at, format: :short) %><% end %></p>
+      <% if AmazonSpApi.sandbox? %>
+        <p>Sandbox sample data uses Amazon's fixed dates, regardless of the selected tax year.</p>
+      <% elsif @batch.sync_active? %>
+        <p>Pulling transactions from Amazon. This page refreshes automatically.</p>
+      <% elsif @batch.sync_failed? %>
+        <p><%= @batch.error_message %> Rows imported before the error are kept.</p>
+      <% elsif @batch.row_count.zero? %>
+        <p>No new transactions were found for this sync.</p>
       <% end %>
     </div>
-    <% if @batch.sync_active? %>
-      <p class="guide-copy">Pulling transactions from Amazon. Amazon limits how fast data can be requested, so a full year can take a few minutes. This page refreshes automatically.</p>
-    <% elsif @batch.sync_failed? %>
-      <div class="callout" style="margin-top:0;"><p><%= @batch.error_message %></p></div>
-      <p class="guide-copy">Rows imported before the error are kept. Fix the issue and run the sync again from the dashboard; already-imported transactions are skipped.</p>
-    <% elsif @batch.row_count.zero? %>
-      <p class="guide-copy">No new transactions were found. Everything for <%= @batch.tax_year %> may already be imported in an earlier sync.</p>
-    <% end %>
-  </div>
+  </details>
 <% end %>
 
-<div class="card">
-  <table class="tight">
-    <thead>
-      <tr>
-        <th>Row</th>
-        <th>Date</th>
-        <th>Description</th>
-        <th>Amount</th>
-        <th>Tax category</th>
-        <th>Status</th>
-        <th>Review note</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @rows.each do |row| %>
-        <tr>
-          <td><%= row.source_row_number %></td>
-          <td><%= row.posted_on || "Unknown" %></td>
-          <td>
-            <strong><%= row.description.presence || "Amazon settlement row" %></strong>
-            <% if row.order_id.present? %>
-              <div class="muted">Order <%= row.order_id %></div>
-            <% end %>
-          </td>
-          <td><%= number_to_currency(row.amount_cents / 100.0) %></td>
-          <td>
-            <% if row.pending? %>
-              <%= form_with model: row, url: amazon_import_row_path(row), local: true, class: "inline-form" do |form| %>
-                <%= form.select :tax_category, AmazonImportRow.category_options %>
-                <%= form.submit "Accept", class: "button small" %>
-                <%= form.submit "Skip", class: "button small secondary" %>
-              <% end %>
-            <% else %>
-              <%= row.tax_category_name %>
-            <% end %>
-          </td>
-          <td><%= row.status.humanize %></td>
-          <td>
-            <% if row.accepted? %>
-              Included in tax summaries
-            <% elsif row.skipped? %>
-              Excluded from tax summaries
-            <% else %>
-              Waiting for review
-            <% end %>
-          </td>
-        </tr>
+<div class="card review-controls">
+  <h2>Find a transaction</h2>
+  <%= form_with url: amazon_import_batch_path(@batch), method: :get, local: true, class: "review-search" do |form| %>
+    <%= form.hidden_field :view, value: "all" %>
+    <div class="review-search-field">
+      <%= form.label :q, "Search transactions" %>
+      <%= form.search_field :q, value: @query, placeholder: "Description, order ID, type, or row number" %>
+    </div>
+    <div>
+      <%= form.label :category, "Category" %>
+      <%= form.select :category, options_for_select([["All categories", ""]] + AmazonImportRow.category_options, @category) %>
+    </div>
+    <div>
+      <%= form.label :status, "Review status" %>
+      <%= form.select :status, options_for_select([["All statuses", ""], ["Awaiting review", "pending"], ["Accepted", "accepted"], ["Skipped", "skipped"]], @review_status) %>
+    </div>
+    <div class="review-amount-field">
+      <%= form.label :min_amount, "Min amount ($)" %>
+      <%= form.number_field :min_amount, value: @min_amount, min: 0, step: 0.01, placeholder: "0.00" %>
+    </div>
+    <div class="review-amount-field">
+      <%= form.label :max_amount, "Max amount ($)" %>
+      <%= form.number_field :max_amount, value: @max_amount, min: 0, step: 0.01, placeholder: "Any" %>
+    </div>
+    <div class="review-sort-field">
+      <%= form.label :sort, "Sort by date" %>
+      <%= form.select :sort, options_for_select([["Newest first", "newest"], ["Oldest first", "oldest"]], @sort) %>
+    </div>
+    <div class="review-search-actions">
+      <%= form.submit "Search", class: "button" %>
+      <% if @filters_active %>
+        <%= link_to "Clear", amazon_import_batch_path(@batch), class: "button secondary" %>
       <% end %>
-    </tbody>
-  </table>
+    </div>
+  <% end %>
+  <p class="review-filter-hint">Amount filters use the size of each transaction: $500 matches both a $500 sale and a -$500 expense.</p>
+  <% if @amount_error %><p class="review-filter-error" role="alert"><%= @amount_error %></p><% end %>
+</div>
+
+<div class="card review-results">
+  <div class="review-results-heading">
+    <div>
+      <h2><%= @view_all ? "All transactions" : "Review priorities" %></h2>
+      <p class="guide-copy">
+        <% if @view_all %>
+          <%= number_with_delimiter(@result_count) %> matching transactions · <%= @sort == "oldest" ? "Oldest first" : "Newest first" %> ·
+          <%= @groups.empty? ? "No groups on this page" : "Showing groups #{(@page - 1) * 20 + 1}–#{(@page - 1) * 20 + @groups.length} of #{number_with_delimiter(@group_count)}" %>
+        <% else %>
+          <% if @review_threshold_dollars.present? %>
+            Up to eight pending items, starting with amounts of <%= number_to_currency(@review_threshold_dollars) %> or more, followed by other review priorities. Open an order to review its sale and related charges together.
+          <% else %>
+            Up to eight uncategorized items, large refunds and fees, and adjustments. Open an order to review its sale and related charges together.
+          <% end %>
+        <% end %>
+      </p>
+    </div>
+    <%= link_to(@view_all ? "Featured view" : "View all #{number_with_delimiter(@batch.row_count)} rows",
+      @view_all ? amazon_import_batch_path(@batch) : amazon_import_batch_path(@batch, view: "all"),
+      class: "button secondary small") %>
+  </div>
+
+  <p class="muted review-progress-label">Review progress for this import</p>
+  <div class="review-status-overview" aria-label="Review progress for this import">
+    <div><span>Awaiting review</span><strong><%= number_with_delimiter(@status_counts.fetch("pending", 0)) %></strong></div>
+    <div><span>Accepted</span><strong><%= number_with_delimiter(@status_counts.fetch("accepted", 0)) %></strong></div>
+    <div><span>Skipped</span><strong><%= number_with_delimiter(@status_counts.fetch("skipped", 0)) %></strong></div>
+  </div>
+
+  <% if @review_threshold_dollars.present? && @below_threshold_count.positive? %>
+    <p class="review-filter-hint"><%= number_with_delimiter(@below_threshold_count) %> pending rows are below your <%= number_to_currency(@review_threshold_dollars) %> threshold. Their combined absolute amounts total <%= number_to_currency(@below_threshold_amount_cents / 100.0) %>; all remain available in View all.</p>
+  <% end %>
+
+  <div class="review-list">
+    <% @groups.each do |group_key, group_rows| %>
+      <% if group_key.start_with?("order:") %>
+        <% sales_cents = group_rows.select { |row| row.tax_category == "gross_sales" || (row.tax_category == "shipping" && row.amount_cents.positive?) }.sum(&:amount_cents) %>
+        <% fees_cents = -group_rows.select { |row| %w[amazon_fees fba_fees advertising].include?(row.tax_category) && row.amount_cents.negative? }.sum(&:amount_cents) %>
+        <% refunds_cents = -group_rows.select { |row| row.tax_category == "refunds_returns" && row.amount_cents.negative? }.sum(&:amount_cents) %>
+        <% tax_cents = -group_rows.select { |row| row.tax_category == "marketplace_withheld_tax" && row.amount_cents.negative? }.sum(&:amount_cents) %>
+        <details class="review-order" <%= "open" if @open_group == group_key %>>
+          <summary>
+            <span class="review-chevron" aria-hidden="true">▸</span>
+            <span class="review-row-main">
+              <strong><%= group_rows.first.review_group_title %> <%= group_rows.first.order_id.strip %></strong>
+              <small><%= pluralize(group_rows.length, @filters_active ? "matching transaction" : "transaction") %> · <%= group_rows.count(&:pending?) %> awaiting review</small>
+            </span>
+            <span class="review-order-categories">
+              <% if @featured_reasons && @featured_reasons[group_key] %><em><%= @featured_reasons[group_key] %></em><% end %>
+              <% if sales_cents.nonzero? %><span>Sale <%= number_to_currency(sales_cents / 100.0) %></span><% end %>
+              <% if fees_cents.nonzero? %><span>Fees <%= number_to_currency(fees_cents / 100.0) %></span><% end %>
+              <% if refunds_cents.nonzero? %><span>Refund <%= number_to_currency(refunds_cents / 100.0) %></span><% end %>
+              <% if tax_cents.nonzero? %><span>Tax withheld <%= number_to_currency(tax_cents / 100.0) %></span><% end %>
+            </span>
+            <span class="pill <%= group_rows.any?(&:pending?) ? "warn" : "good" %>"><%= group_rows.any?(&:pending?) ? "Review" : "Reviewed" %></span>
+          </summary>
+          <div class="review-order-rows">
+            <% group_rows.each do |row| %>
+              <%= render "review_row", row: row, group_key: group_key %>
+            <% end %>
+          </div>
+        </details>
+      <% else %>
+        <%= render "review_row", row: group_rows.first, group_key: group_key %>
+      <% end %>
+    <% end %>
+    <% if @groups.empty? %>
+      <p class="guide-copy"><%= @amount_error ? "Correct the amount range above to see results." : @view_all ? "No transactions match these filters." : "No pending priority items remain. View all transactions to review the rest." %></p>
+    <% end %>
+  </div>
+
+  <% if @view_all && @group_count.positive? %>
+    <div class="review-pages">
+      <% if @page > 1 %>
+        <%= link_to "Previous", amazon_import_batch_path(@batch, q: @query, category: @category, status: @review_status, min_amount: @min_amount, max_amount: @max_amount, sort: @sort, view: "all", page: @page - 1), class: "button secondary small" %>
+      <% end %>
+      <span>Page <%= @page %> of <%= (@group_count / 20.0).ceil %></span>
+      <% if @page * 20 < @group_count %>
+        <%= link_to "Next", amazon_import_batch_path(@batch, q: @query, category: @category, status: @review_status, min_amount: @min_amount, max_amount: @max_amount, sort: @sort, view: "all", page: @page + 1), class: "button secondary small" %>
+      <% end %>
+    </div>
+  <% end %>
 </div>

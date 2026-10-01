@@ -1,6 +1,6 @@
 class DashboardController < ApplicationController
   def index
-    @year = rows.where.not(posted_on: nil).maximum("strftime('%Y', posted_on)")&.to_i || Date.current.year
+    @year = Current.user.effective_tax_year
     @latest_batch = Current.user.amazon_import_batches.order(imported_at: :desc).first
     @recent_batches = Current.user.amazon_import_batches.order(imported_at: :desc).limit(5)
     @year_totals = rows.accepted_tax_totals(@year)
@@ -12,6 +12,7 @@ class DashboardController < ApplicationController
     @amazon_connection = Current.user.amazon_connection
     @latest_sync = Current.user.amazon_import_batches.source_sp_api.order(created_at: :desc).first
     @sync_year_options = AmazonTransactionsSync.selectable_tax_years
+    @default_sync_year = @sync_year_options.include?(Current.user.default_tax_year) ? Current.user.default_tax_year : (@sync_year_options.second || @sync_year_options.first)
   end
 
   private

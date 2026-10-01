@@ -1,0 +1,38 @@
+<details class="review-row">
+  <summary>
+    <span class="review-chevron" aria-hidden="true">▸</span>
+    <span class="review-row-main">
+      <strong><%= row.review_label %></strong>
+      <small><% if @featured_reasons && @featured_reasons[group_key] && !group_key.start_with?("order:") %><%= @featured_reasons[group_key] %> · <% end %>Row #<%= row.source_row_number %> · <%= row.posted_on || "Date unknown" %></small>
+    </span>
+    <span class="review-row-category"><%= row.tax_category_name %></span>
+    <strong class="review-row-amount"><%= number_to_currency(row.amount_cents / 100.0) %></strong>
+    <span class="pill <%= row.pending? ? "warn" : row.accepted? ? "good" : "" %>"><%= row.pending? ? "Review" : row.status.humanize %></span>
+  </summary>
+  <div class="review-row-detail">
+    <% if row.order_id.present? %><p><strong>Order:</strong> <%= row.order_id %></p><% end %>
+    <% if row.description.present? %><p><strong>Amazon description:</strong> <%= row.description %></p><% end %>
+    <% if row.transaction_type.present? %><p><strong>Transaction type:</strong> <%= row.transaction_type %></p><% end %>
+    <% if row.amount_type.present? %><p><strong>Amazon amount type:</strong> <%= row.amount_type %></p><% end %>
+    <% if row.amount_description.present? %><p><strong>Amazon detail:</strong> <%= row.amount_description %></p><% end %>
+    <% if row.pending? %>
+      <%= form_with model: row, url: amazon_import_row_path(row), local: true, class: "inline-form" do |form| %>
+        <%= hidden_field_tag :q, @query %>
+        <%= hidden_field_tag :category, @category %>
+        <%= hidden_field_tag :status, @review_status %>
+        <%= hidden_field_tag :min_amount, @min_amount %>
+        <%= hidden_field_tag :max_amount, @max_amount %>
+        <%= hidden_field_tag :sort, @sort %>
+        <%= hidden_field_tag :view, "all" if @view_all %>
+        <%= hidden_field_tag :page, @page if @view_all %>
+        <%= hidden_field_tag :open_group, group_key if group_key.start_with?("order:") %>
+        <%= form.label :tax_category, "Tax category" %>
+        <%= form.select :tax_category, AmazonImportRow.category_options %>
+        <%= form.submit "Accept", class: "button small" %>
+        <%= form.submit "Skip", class: "button small secondary" %>
+      <% end %>
+    <% else %>
+      <p><%= row.accepted? ? "Included in tax summaries" : "Excluded from tax summaries" %></p>
+    <% end %>
+  </div>
+</details>

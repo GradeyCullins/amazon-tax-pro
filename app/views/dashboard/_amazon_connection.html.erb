@@ -35,7 +35,7 @@
     <% if connection.active? %>
       <%= form_with url: amazon_syncs_path, local: true, class: "inline-form" do |form| %>
         <%= form.label :tax_year, "Tax year" %>
-        <%= form.select :tax_year, sync_year_options, selected: sync_year_options.second || sync_year_options.first %>
+        <%= form.select :tax_year, sync_year_options, selected: default_sync_year %>
         <%= form.submit "Sync now", class: "button" %>
       <% end %>
       <p class="muted" style="margin-top:12px;">Imports released transactions for the full calendar year (Pacific time). Amazon data can lag up to 48 hours. Re-syncing only adds new transactions and keeps your reviews.</p>

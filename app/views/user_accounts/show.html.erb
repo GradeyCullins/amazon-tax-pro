@@ -1,23 +1,94 @@
-<div class="card auth-card">
-  <h1>Account</h1>
-  <p class="guide-copy" style="margin-bottom:16px;">Signed in as <strong><%= @user.email_address %></strong>.</p>
-  <p class="guide-copy" style="margin-bottom:16px;">
-    Amazon:
-    <% if @amazon_connection %>
-      connected (seller <%= @amazon_connection.selling_partner_id %>)
-    <% else %>
-      not connected
+<div class="page-header">
+  <div>
+    <h1>Profile &amp; settings</h1>
+    <p class="muted">Keep your account details and preferred tax year in one place.</p>
+  </div>
+</div>
+
+<div class="grid profile-grid">
+  <div class="profile-column">
+  <div class="card profile-card">
+    <h2>Your profile</h2>
+    <p class="guide-copy profile-intro">Signed in as <strong><%= @user.email_address %></strong>.</p>
+
+    <%= form_with model: @user, url: user_account_path, method: :patch, local: true do |form| %>
+      <div class="form-row">
+        <%= form.label :display_name, "Display name" %>
+        <%= form.text_field :display_name, maxlength: 100, autocomplete: "name", placeholder: "Your name" %>
+        <small>Shown in the top right corner when you sign in.</small>
+      </div>
+      <div class="form-row">
+        <%= form.label :business_name, "Business name" %>
+        <%= form.text_field :business_name, maxlength: 100, autocomplete: "organization", placeholder: "Your Amazon business" %>
+        <small>Used as the starting business name for new tax years in TurboTax Export.</small>
+      </div>
+      <div class="form-row">
+        <%= form.label :default_tax_year, "Default tax year" %>
+        <%= form.select :default_tax_year, options_for_select([["Automatic (latest activity)", ""]] + Date.current.year.downto(2000).map { |year| [year, year] }, @user.default_tax_year) %>
+        <small>Opens your dashboard and tax views in this year. You can still switch years on those pages.</small>
+      </div>
+      <%= form.submit "Save profile", class: "button" %>
     <% end %>
-  </p>
+  </div>
 
-  <h2>Delete account</h2>
-  <p class="guide-copy" style="margin-bottom:16px;">This permanently deletes your account, stored Amazon authorization, imported transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
+  <div class="card profile-card">
+    <h2>Review preferences</h2>
+    <p class="guide-copy profile-intro">Choose the minimum transaction amount to put at the top of Featured review.</p>
+    <%= form_with model: @user, url: user_account_path, method: :patch, local: true do |form| %>
+      <div class="form-row">
+        <%= form.label :review_threshold_dollars, "Minimum amount to prioritize ($)" %>
+        <%= form.number_field :review_threshold_dollars, min: 1, max: 1_000_000, step: 1, placeholder: "For example, 500" %>
+        <small>For example, enter 500 to prioritize pending items of $500 or more. Leave this blank for the standard picks. Every row stays searchable.</small>
+      </div>
+      <%= form.submit "Save review preference", class: "button" %>
+    <% end %>
+  </div>
+  </div>
 
-  <%= form_with url: user_account_path, method: :delete, local: true, html: { onsubmit: "return confirm('Delete your account and all imported data? This cannot be undone.')" } do |form| %>
-    <div class="form-row">
-      <%= form.label :password, "Confirm password" %>
-      <%= form.password_field :password, required: true, autocomplete: "current-password" %>
-    </div>
-    <%= form.submit "Delete account and data", class: "button danger" %>
-  <% end %>
+  <div class="profile-column">
+  <div class="card profile-connection">
+    <h2>Amazon connection</h2>
+    <% if @amazon_connection %>
+      <p class="guide-copy"><span class="pill <%= @amazon_connection.active? ? "good" : "bad" %>"><%= @amazon_connection.active? ? "Connected" : "Needs reconnect" %></span></p>
+      <p class="guide-copy profile-detail">Seller <strong><%= @amazon_connection.selling_partner_id %></strong></p>
+      <p class="guide-copy profile-detail">Last successful sync: <strong><%= @amazon_connection.last_synced_at ? l(@amazon_connection.last_synced_at, format: :short) : "Never" %></strong></p>
+    <% else %>
+      <p class="guide-copy">No Amazon seller account connected yet.</p>
+    <% end %>
+    <%= link_to "Manage Amazon connection", root_path, class: "button secondary small profile-link" %>
+  </div>
+
+  <div class="card profile-card">
+    <h2>Security</h2>
+    <h3>Change password</h3>
+    <%= form_with url: user_account_password_path, scope: :password_change, method: :patch, local: true do |form| %>
+      <div class="form-row">
+        <%= form.label :current_password, "Current password" %>
+        <%= form.password_field :current_password, required: true, autocomplete: "current-password" %>
+      </div>
+      <div class="form-row">
+        <%= form.label :password, "New password" %>
+        <%= form.password_field :password, required: true, minlength: 8, maxlength: 72, autocomplete: "new-password" %>
+      </div>
+      <div class="form-row">
+        <%= form.label :password_confirmation, "Confirm new password" %>
+        <%= form.password_field :password_confirmation, required: true, minlength: 8, maxlength: 72, autocomplete: "new-password" %>
+      </div>
+      <%= form.submit "Update password", class: "button" %>
+    <% end %>
+  </div>
+
+  <div class="card profile-delete">
+    <h2>Delete account</h2>
+    <p class="guide-copy" style="margin-bottom:16px;">This permanently deletes your account, stored Amazon authorization, imported transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
+
+    <%= form_with url: user_account_path, method: :delete, local: true, html: { onsubmit: "return confirm('Delete your account and all imported data? This cannot be undone.')" } do |form| %>
+      <div class="form-row">
+        <%= form.label :password, "Confirm password" %>
+        <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+      </div>
+      <%= form.submit "Delete account and data", class: "button danger" %>
+    <% end %>
+  </div>
+  </div>
 </div>

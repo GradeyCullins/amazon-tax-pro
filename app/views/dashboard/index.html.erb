@@ -10,30 +10,30 @@
   </div>
 </div>
 
-<%= render "amazon_connection", connection: @amazon_connection, latest_sync: @latest_sync, sync_year_options: @sync_year_options %>
+<%= render "amazon_connection", connection: @amazon_connection, latest_sync: @latest_sync, sync_year_options: @sync_year_options, default_sync_year: @default_sync_year %>
 
 <div class="card guide-card" style="margin-bottom:18px;">
   <h2 style="margin-top:0;">How to use this app</h2>
   <p class="guide-copy">
-    Work left to right: import Amazon data, review the categories this app suggests, then generate the tax packet or TurboTax export for the selected tax year.
+    Work left to right: sync a tax year from Amazon, focus your review on priority items, add your inventory costs, then generate the tax packet or TurboTax export.
   </p>
 </div>
 
 <div class="grid guide-grid cards">
   <div class="card guide-card">
     <div class="guide-step">1</div>
-    <h3>Import Amazon data</h3>
-    <p class="guide-copy">Connect your Amazon seller account and sync a tax year, or upload a settlement CSV/TSV or 2025 transaction report from Seller Central. Each transaction is split into tax review rows.</p>
+    <h3>Sync Amazon data</h3>
+    <p class="guide-copy">Connect your Amazon seller account and choose a tax year to sync sales, refunds, and fees for review. Sync again when you need newer activity; a Seller Central file upload is available as a fallback.</p>
   </div>
   <div class="card guide-card">
     <div class="guide-step">2</div>
     <h3>Review the queue</h3>
-    <p class="guide-copy">Open each import and accept rows that belong in your tax summary. Change the category first when Amazon fees, FBA fees, refunds, shipping, or advertising need correction.</p>
+    <p class="guide-copy">Start with the featured items: uncategorized amounts, larger refunds and fees, and adjustments. Search and filter the full list when you need to investigate a specific transaction.</p>
   </div>
   <div class="card guide-card">
     <div class="guide-step">3</div>
-    <h3>Finish manual inputs</h3>
-    <p class="guide-copy">Amazon files do not know what you paid for inventory. Add COGS and business details on the TurboTax export page before treating the final numbers as ready.</p>
+    <h3>Add your costs</h3>
+    <p class="guide-copy">Amazon does not know what you paid for inventory. Enter your annual inventory, purchases, and other COGS amounts on the TurboTax export page before finalizing your figures.</p>
   </div>
   <div class="card guide-card">
     <div class="guide-step">4</div>

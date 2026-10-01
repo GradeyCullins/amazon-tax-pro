@@ -15,7 +15,6 @@ class AmazonImportRow < ApplicationRecord
     "uncategorized" => "Uncategorized"
   }.freeze
 
-  REVENUE_CATEGORIES = %w[gross_sales reimbursements].freeze
   EXCLUDED_TAX_CATEGORIES = %w[bank_transfers marketplace_withheld_tax reserves_adjustments].freeze
   FIRST_TAX_YEAR = 2000
   # SQLite returns NULL here for years it can't format (five digits or negative).
@@ -72,26 +71,41 @@ class AmazonImportRow < ApplicationRecord
     where.not(posted_on: nil).distinct.pluck(Arel.sql(POSTED_YEAR_SQL)).select { |year| tax_years.cover?(year) }.sort.reverse
   end
 
-  def self.accepted_tax_totals(year)
-    accepted.for_year(year).group_by(&:tax_category).transform_values do |rows|
-      rows.sum(&:tax_amount_cents)
-    end
-  end
-
   def tax_category_name
     TAX_CATEGORIES.fetch(tax_category)
   end
 
-  def tax_amount_cents
-    taxable_expense? ? amount_cents.abs : amount_cents
-  end
+  # What the row is in seller terms ("Referral fee", "Customer refund"); Amazon's own wording stays in the details.
+  def plain_label
+    detail = [amount_type, amount_description].compact.join(" ")
 
-  def excluded_from_income_tax?
-    EXCLUDED_TAX_CATEGORIES.include?(tax_category)
-  end
-
-  def taxable_expense?
-    !REVENUE_CATEGORIES.include?(tax_category) && !excluded_from_income_tax?
+    case tax_category
+    when "gross_sales" then amount_cents.negative? ? "Sales adjustment" : "Product sale"
+    when "refunds_returns" then amount_cents.positive? ? "Refund adjustment" : "Customer refund"
+    when "amazon_fees"
+      fee = if detail.match?(/commission/i)
+        "Referral fee"
+      elsif detail.match?(/subscription/i)
+        "Seller subscription fee"
+      elsif detail.match?(/shipping.?chargeback/i)
+        "Shipping chargeback"
+      else
+        "Amazon selling fee"
+      end
+      amount_cents.positive? ? "#{fee} credit" : fee
+    when "fba_fees"
+      fee = detail.match?(/storage/i) ? "FBA storage fee" : "FBA fulfillment fee"
+      amount_cents.positive? ? "#{fee} credit" : fee
+    when "shipping" then amount_cents.negative? ? "Shipping charge" : "Shipping credit"
+    when "advertising" then amount_cents.positive? ? "Advertising credit" : "Advertising charge"
+    when "reimbursements" then amount_cents.negative? ? "Reimbursement reversal" : "Amazon reimbursement"
+    when "marketplace_withheld_tax" then "Marketplace tax withheld"
+    when "bank_transfers" then "Bank payout or transfer"
+    when "cost_of_goods_sold" then "Cost of goods sold"
+    when "other_business_expenses" then "Other business expense"
+    when "reserves_adjustments" then "Account adjustment"
+    else "Needs a category"
+    end
   end
 
   def review_status

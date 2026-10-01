@@ -44,7 +44,7 @@
     </nav>
 
     <div class="filters">
-      <%= form_with url: review_path, method: :get, class: "inline-form" do |form| %>
+      <%= form_with url: review_path, method: :get, class: "review-search" do |form| %>
         <%= hidden_field_tag :year, year, id: nil %>
         <% if @status != ReviewsController::DEFAULT_STATUS %>
           <%= hidden_field_tag :status, @status, id: nil %>
@@ -52,9 +52,36 @@
         <% if @import %>
           <%= hidden_field_tag :import_id, @import.id, id: nil %>
         <% end %>
-        <%= form.label :category, "Category", for: "review_category" %>
-        <%= form.select :category, AmazonImportRow.category_options, { include_blank: "All categories", selected: @category }, id: "review_category" %>
-        <%= form.submit "Filter", name: nil, class: "button small secondary" %>
+        <div class="review-search-field">
+          <%= form.label :q, "Search", for: "review_q" %>
+          <%= form.search_field :q, value: @query, id: "review_q", placeholder: "Description, order ID, or row number" %>
+        </div>
+        <div>
+          <%= form.label :category, "Category", for: "review_category" %>
+          <%= form.select :category, AmazonImportRow.category_options, { include_blank: "All categories", selected: @category }, id: "review_category" %>
+        </div>
+        <div class="review-amount-field">
+          <%= form.label :min_amount, "Min amount ($)", for: "review_min_amount" %>
+          <%= form.text_field :min_amount, value: @min_amount, id: "review_min_amount", inputmode: "decimal", placeholder: "0.00" %>
+        </div>
+        <div class="review-amount-field">
+          <%= form.label :max_amount, "Max amount ($)", for: "review_max_amount" %>
+          <%= form.text_field :max_amount, value: @max_amount, id: "review_max_amount", inputmode: "decimal", placeholder: "Any" %>
+        </div>
+        <div>
+          <%= form.label :sort, "Sort", for: "review_sort" %>
+          <%= form.select :sort, ReviewsController::SORTS.invert, { selected: @sort }, id: "review_sort" %>
+        </div>
+        <div class="actions">
+          <%= form.submit "Filter", name: nil, class: "button small" %>
+          <% if filters_active? %>
+            <%= link_to "Clear", review_filter_path(category: nil, import_id: nil, q: nil, min_amount: nil, max_amount: nil), class: "button small secondary" %>
+          <% end %>
+        </div>
+      <% end %>
+      <p class="note">Amounts match by size: $500 finds both a $500 sale and a -$500 fee.</p>
+      <% if @amount_error %>
+        <div class="callout warn" role="alert"><p><%= @amount_error %></p></div>
       <% end %>
       <% if @import %>
         <p class="note">
@@ -74,10 +101,10 @@
             <%= link_to "Tax packet", tax_packet_path(year: year), class: "button secondary" %>
             <%= link_to "TurboTax export", turbo_tax_export_path(year: year), class: "button" %>
           </div>
-        <% elsif @category || @import %>
-          <p class="guide-copy">No rows match these filters.</p>
+        <% elsif filters_active? %>
+          <p class="guide-copy"><%= @amount_error ? "Fix the amount range to see rows." : "No rows match these filters." %></p>
           <div class="actions">
-            <%= link_to "Clear filters", review_filter_path(category: nil, import_id: nil), class: "button small secondary" %>
+            <%= link_to "Clear filters", review_filter_path(category: nil, import_id: nil, q: nil, min_amount: nil, max_amount: nil), class: "button small secondary" %>
           </div>
         <% else %>
           <p class="guide-copy"><%= { "user_accepted" => "You haven't accepted or changed any #{year} rows yet.", "skipped" => "You haven't skipped any #{year} rows." }.fetch(@status, "No #{year} rows here.") %></p>
@@ -99,13 +126,24 @@
             <tr>
               <td><%= row.posted_on %></td>
               <td>
-                <strong><%= row.description.presence || "Amazon transaction" %></strong>
-                <% if row.order_id.present? %>
-                  <div class="muted">Order <%= row.order_id %></div>
-                <% end %>
-                <% if row.amazon_import_batch.source_upload? %>
-                  <div class="muted">Upload: <%= row.amazon_import_batch.display_name %></div>
-                <% end %>
+                <strong><%= row.plain_label %></strong>
+                <details class="row-details">
+                  <summary>Amazon details</summary>
+                  <dl>
+                    <% if row.order_id.present? %>
+                      <dt>Order</dt>
+                      <dd><%= row.order_id %> · <%= link_to "Every row from this order", review_filter_path(status: "all", q: row.order_id.strip, category: nil, import_id: nil, min_amount: nil, max_amount: nil, page: nil) %></dd>
+                    <% end %>
+                    <% { "Description" => row.description, "Transaction type" => row.transaction_type, "Amount type" => row.amount_type, "Amount detail" => row.amount_description }.each do |term, value| %>
+                      <% if value.present? %>
+                        <dt><%= term %></dt>
+                        <dd><%= value %></dd>
+                      <% end %>
+                    <% end %>
+                    <dt>Source</dt>
+                    <dd><%= link_to "#{row.amazon_import_batch.display_name}, row #{number_with_delimiter(row.source_row_number)}", amazon_import_batch_path(row.amazon_import_batch) %></dd>
+                  </dl>
+                </details>
               </td>
               <td><%= money(row.amount_cents) %></td>
               <td><%= review_pill(row.review_status) %></td>

@@ -43,6 +43,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_064847) do
     t.datetime "finished_at"
     t.datetime "imported_at", null: false
     t.integer "row_count", default: 0, null: false
+    t.boolean "sandbox_sample", default: false, null: false
     t.integer "source", default: 0, null: false
     t.datetime "started_at"
     t.integer "status", default: 0, null: false

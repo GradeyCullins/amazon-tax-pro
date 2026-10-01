@@ -33,9 +33,10 @@ Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. The
 - `app/models/amazon_transaction_normalizer.rb`: API transaction → import rows (one per leaf breakdown, plus residual row).
 - `app/models/amazon_tax_categorizer.rb`: category rules shared by the CSV importer and the API sync.
 - `app/models/amazon_settlement_importer.rb`: Amazon CSV/TSV parsing (fallback upload).
-- `app/models/amazon_import_row.rb`: tax categories, row statuses, review buckets (`REVIEW_STATUSES`), the auto-accept rule (`initial_status_for`), and accepted tax totals. `reviewed_at` is NULL until a person accepts or skips the row.
+- `app/models/amazon_import_row.rb`: tax categories, row statuses, review buckets (`REVIEW_STATUSES`), the auto-accept rule (`initial_status_for`), and seller-friendly `plain_label`s. `reviewed_at` is NULL until a person accepts or skips the row.
 - `app/models/tax_year_status.rb`: per-year facts (review counts, synced?, uploaded rows, mixed sources, latest/active sync) shared by the dashboard, Review, and outputs.
 - `app/models/pagination.rb` + `app/views/shared/_pagination.html.erb`: in-house pagination (no gem).
+- `app/models/amazon_year_activity.rb`: signed yearly totals from accepted rows (credits net; gross receipts; after-fee revenue reference), shared by the dashboard, tax packet, and TurboTax export.
 - `app/models/turbo_tax_export.rb`: TXF, audit CSV, and readiness warnings; counts accepted rows only, like the tax packet.
 - `app/helpers/application_helper.rb`: `money`, `review_pill`, `sync_pill`, `nav_link`, `page_path`, `sync_year_range`.
 - `app/views/shared/`: year switcher, pagination, mixed-source warning partials; `app/views/amazon_syncs/_sync_action.html.erb` picks the next step (upload / connect / reconnect / progress / Sync YEAR).
@@ -108,12 +109,13 @@ amazon_sp_api:
 - Database migrations: `bin/rails db:migrate` (or `mise run migrate`); roll back with `bin/rails db:rollback:primary` (multi-database app)
 - Re-apply category rules to rows no one has reviewed: `bin/rails amazon:recategorize` (dry run; add `APPLY=1` to save, `EMAIL=...` for one seller). Run it after changing `AmazonTaxCategorizer` rules.
 - Categorizer tests: `mise exec -- ruby test/amazon_tax_categorizer_test.rb`
+- Year totals and TXF line tests (uses the test DB; run `bin/rails db:test:prepare` first): `mise exec -- ruby test/amazon_year_activity_test.rb`
 - Rails console: `bin/rails console`
 - Whitespace check: `git diff --check`
 
 ## Testing Notes
 
-- `test/amazon_tax_categorizer_test.rb` is a standalone Minitest file for the category rules; there is no full Rails test suite yet.
+- `test/` holds standalone Minitest files: `amazon_tax_categorizer_test.rb` (category rules, no Rails) and `amazon_year_activity_test.rb` (loads Rails in the test env; totals, TXF lines, plain labels). There is no `bin/rails test` setup (`test_helper`) yet.
 - When changing code, use the Rails boot check and focused manual verification (e.g. `bin/rails runner` scripts using `ActionDispatch::Integration::Session`; set `ActionController::Base.allow_forgery_protection = false` and `ActiveJob::Base.queue_adapter = :test` in the script so POSTs work and no real sync jobs run).
 - Avoid treating generated or local SQLite files under `storage/` as source changes unless the user explicitly asks for database state changes.
 

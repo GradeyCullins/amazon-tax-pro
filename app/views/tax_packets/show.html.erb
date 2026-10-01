@@ -27,15 +27,35 @@
     </div>
   <% end %>
 
-  <div class="grid cards">
+  <% if @year_status.sandbox_sample? %>
+    <div class="callout"><p>These totals include Amazon sandbox sample transactions. They're for testing only.</p></div>
+  <% end %>
+
+  <div class="grid cards tax-packet-cards">
+    <div class="card">
+      <div class="muted">Gross receipts (sales + shipping credits)</div>
+      <div class="value"><%= money(@activity.gross_receipts_cents) %></div>
+    </div>
+    <div class="card">
+      <div class="muted">After-fee revenue</div>
+      <div class="value"><%= money(@activity.revenue_cents) %></div>
+    </div>
     <% AmazonImportRow::TAX_CATEGORIES.each do |category, label| %>
-      <% next if category == "uncategorized" && @totals.fetch(category, 0).zero? %>
+      <% next if category == "uncategorized" %>
+      <% amount_cents = category == "cost_of_goods_sold" ? @cogs_input.cost_of_goods_sold_cents : @activity.total_cents(category) %>
       <div class="card">
-        <div class="muted"><%= label %></div>
-        <div class="value"><%= money(@totals.fetch(category, 0)) %></div>
+        <div class="muted"><%= { "shipping" => "Shipping (net)", "cost_of_goods_sold" => "Cost of goods sold (you enter)" }.fetch(category, label) %></div>
+        <div class="value"><%= money(amount_cents) %></div>
       </div>
     <% end %>
   </div>
+
+  <p class="note">
+    Expenses and withheld tax show as positive totals, and credits are netted against their category (a refunded fee lowers fees).
+    After-fee revenue is gross receipts minus refunds, Amazon and FBA fees, advertising, and shipping charges. It's a planning
+    figure; Schedule C reports gross receipts and each expense separately. Cost of goods sold comes from your
+    <%= link_to "TurboTax export inputs", turbo_tax_export_path(year: @year) %>.
+  </p>
 
   <div class="card section">
     <h2>Audit trail</h2>
@@ -58,7 +78,7 @@
               <td><%= row.posted_on %></td>
               <td><%= row.tax_category_name %></td>
               <td><%= row.description.presence || row.order_id || "Amazon transaction" %></td>
-              <td><%= money(row.tax_amount_cents) %></td>
+              <td><%= money(row.amount_cents) %></td>
               <td><%= review_pill(row.review_status) %></td>
             </tr>
           <% end %>

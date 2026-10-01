@@ -10,7 +10,7 @@ class DashboardController < ApplicationController
 
     return unless @year_status.rows?
 
-    @totals = @year_status.rows.accepted_tax_totals(current_tax_year)
+    @activity = AmazonYearActivity.new(user: Current.user, year: current_tax_year)
     @excluded_count = @year_status.rows.accepted.where(tax_category: AmazonImportRow::EXCLUDED_TAX_CATEGORIES).count
   end
 end

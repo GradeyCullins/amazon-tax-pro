@@ -120,6 +120,20 @@ link to the progress page instead.
 - Accepting a row as Uncategorized is refused with "Choose a tax category before accepting, or
   skip the row."
 - Row actions redirect back to the same filtered and paginated Review URL.
+- Each row leads with a plain-language label (`AmazonImportRow#plain_label`: "Referral fee",
+  "Customer refund", "Shipping charge"). Amazon's own wording, the order, and the source row sit in a
+  collapsed "Amazon details" disclosure, with a link to every row from the same order.
+- Review filters: status tabs, search (description, order ID, Amazon type fields, or row number),
+  category, amount range by size (|amount|), and sort (oldest, newest, largest amount). "Largest
+  amount first" is the spot-check view for auto-categorized rows.
+- **Totals are signed.** `AmazonYearActivity` sums accepted rows with Amazon's signs, so credits net
+  against their category (a refunded fee lowers fees). The tax packet shows expenses and withheld
+  tax as positive totals. Positive shipping is gross receipts; shipping Amazon charged the seller
+  goes on Other business expenses. The audit trail shows each row's signed amount.
+- **Gross receipts vs after-fee revenue.** Gross receipts (sales + shipping credits) is the Schedule C
+  figure. After-fee revenue (gross receipts minus refunds, Amazon and FBA fees, ads, and shipping
+  charges) is a planning figure only: it's labeled "reference only" on the export and never becomes
+  a TXF line.
 - Transfers, marketplace-withheld tax, and reserves are counted rows, but they're left out of
   Schedule C lines ("not on Schedule C").
 - Category rule fixes reach existing rows through `bin/rails amazon:recategorize`. It's a dry run
@@ -290,7 +304,9 @@ Pagination is 100 rows per page.
 
 **Review controls.**
 - `.tabs` are status filter links with `.tab-count`. The current tab is filled ink.
-- `.filters` holds the category select and the "Only rows from <sync or upload>" note.
+- `.filters` holds the `.review-search` form (search, category, amount range, sort), the
+  amount hint, and the "Only rows from <sync or upload>" note. Bad amounts show a `.callout.warn`.
+- `.row-details` is a `<details>` disclosure inside a table cell, with a `dl` of Amazon fields.
 
 **"What needs attention" checklist.** A `.tight` table with four rows: Amazon sync, Review, Cost
 of goods sold, Export. Each row has a pill and one sentence with a link.
@@ -465,3 +481,4 @@ Recorded here, not yet fixed:
 | 2026-10-01 | One year control per page. The connect card's **Sync YEAR** button syncs the selected year rather than having its own year select. |
 | 2026-10-01 | Year-scoped h1s include the year ("Review 2025", "Tax Packet 2025", "TurboTax Export 2025"). |
 | 2026-10-01 | Created this file as the design source of truth. |
+| 2026-10-01 | Merged PR #4 into the sync-first design: signed totals through `AmazonYearActivity` (credits net, shipping charges are expenses), gross receipts plus an after-fee revenue reference, plain-language row labels with Amazon details, and search, amount, and sort filters on Review. Kept accepted-only outputs, the shared tax year, and sync-wins, so the PR's per-import review page, featured priorities list, and API-over-upload source preference were not adopted. Sync runs record `sandbox_sample`, and the tax packet flags sandbox totals. |

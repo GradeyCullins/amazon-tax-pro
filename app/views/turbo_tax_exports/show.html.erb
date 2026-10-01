@@ -24,7 +24,7 @@
 <div class="grid dashboard-main">
   <div class="card">
     <h2>Schedule C preview</h2>
-    <table class="tight">
+    <table class="tight schedule-c-table">
       <thead>
         <tr>
           <th scope="col">TXF ref</th>
@@ -33,6 +33,13 @@
         </tr>
       </thead>
       <tbody>
+        <% if @export.lines.any? %>
+          <tr class="reference-line">
+            <td>—</td>
+            <td>After-fee revenue (reference only)</td>
+            <td><%= money(@export.activity.revenue_cents) %></td>
+          </tr>
+        <% end %>
         <% @export.lines.each do |line| %>
           <tr>
             <td><%= line.txf_ref %></td>
@@ -45,6 +52,9 @@
         <% end %>
       </tbody>
     </table>
+    <% if @export.lines.any? %>
+      <p class="note">After-fee revenue matches the <%= link_to "#{@year} tax packet", tax_packet_path(year: @year) %>. It's a planning figure, not a TXF line.</p>
+    <% end %>
   </div>
 
   <div class="card">

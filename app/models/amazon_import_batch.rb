@@ -17,6 +17,7 @@ class AmazonImportBatch < ApplicationRecord
       amazon_connection: connection,
       source: :sp_api,
       sync_status: :queued,
+      sandbox_sample: AmazonSpApi.sandbox?,
       tax_year: tax_year,
       filename: "Amazon sync · #{tax_year}",
       imported_at: Time.current

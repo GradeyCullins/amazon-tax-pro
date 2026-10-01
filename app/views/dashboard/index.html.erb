@@ -58,9 +58,9 @@
     </div>
 
     <div class="grid cards section">
-      <div class="card"><div class="muted"><%= year %> gross sales</div><div class="value"><%= money(@totals.fetch("gross_sales", 0)) %></div></div>
-      <div class="card"><div class="muted"><%= year %> Amazon &amp; FBA fees</div><div class="value"><%= money(@totals.fetch("amazon_fees", 0) + @totals.fetch("fba_fees", 0)) %></div></div>
-      <div class="card"><div class="muted"><%= year %> refunds</div><div class="value"><%= money(@totals.fetch("refunds_returns", 0)) %></div></div>
+      <div class="card"><div class="muted"><%= year %> gross sales</div><div class="value"><%= money(@activity.total_cents("gross_sales")) %></div></div>
+      <div class="card"><div class="muted"><%= year %> Amazon &amp; FBA fees</div><div class="value"><%= money(@activity.total_cents("amazon_fees") + @activity.total_cents("fba_fees")) %></div></div>
+      <div class="card"><div class="muted"><%= year %> refunds</div><div class="value"><%= money(@activity.total_cents("refunds_returns")) %></div></div>
       <div class="card"><div class="muted"><%= year %> cost of goods sold</div><div class="value"><%= @export_input.cost_of_goods_sold_cents.zero? ? "Missing" : money(@export_input.cost_of_goods_sold_cents) %></div></div>
     </div>
   <% else %>

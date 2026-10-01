@@ -15,7 +15,7 @@
 <% if @batch.source_sp_api? %>
   <div class="card connect-card">
     <h2>Amazon sync · <%= @batch.tax_year %></h2>
-    <% if AmazonSpApi.sandbox? %>
+    <% if @batch.sandbox_sample? %>
       <p class="guide-copy">Sandbox sample data keeps Amazon's fixed dates, whatever tax year you sync. Re-syncing skips sample rows you already have.</p>
     <% end %>
     <div class="connect-meta">

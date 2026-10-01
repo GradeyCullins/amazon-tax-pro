@@ -44,6 +44,11 @@ class TaxYearStatus
     rows.uploaded
   end
 
+  # Rows from Amazon's fixed sandbox sample (development only) aren't real seller data.
+  def sandbox_sample?
+    rows.joins(:amazon_import_batch).where(amazon_import_batches: { sandbox_sample: true }).exists?
+  end
+
   # Uploaded rows in a synced year can duplicate transactions the sync already pulled in.
   def mixed_sources?
     @mixed_sources = synced? && uploaded_rows.exists? if @mixed_sources.nil?

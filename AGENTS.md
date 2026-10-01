@@ -13,6 +13,7 @@ Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. The
 - Puma, with Solid Queue running inside Puma when `SOLID_QUEUE_IN_PUMA` is set (`bin/dev` and Kamal set it)
 - Rails 8 authentication generator (email/password; password reset is not enabled because there is no SMTP)
 - `peddler` gem for Login with Amazon (LWA) and Finances API v2024-06-19
+- Windows dev support: `tzinfo-data` plus `Gem.win_platform?` guards in `config/boot.rb` and `config/initializers/windows_template_glob.rb` (no-ops elsewhere)
 - ERB views with app-wide inline CSS in `app/views/layouts/application.html.erb`; the site gate uses `app/views/layouts/gate.html.erb`
 
 ## Key Paths
@@ -21,7 +22,7 @@ Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. The
 - `config/routes.rb`: site gate, auth, sign-up, dashboard, Amazon connection/sync, Review, Sync history (`/amazon-imports`), tax packet, TurboTax export.
 - `app/controllers/concerns/site_gate.rb`: shared-password gate (production, or `SITE_GATE=1`); 30-day signed cookie tied to the password.
 - `app/controllers/concerns/authentication.rb`, `sessions_controller.rb`, `registrations_controller.rb`: user accounts.
-- `app/controllers/user_accounts_controller.rb`: account page (`/account`) with password-confirmed account + data deletion (`User#destroy_with_data!`).
+- `app/controllers/user_accounts_controller.rb`: Profile & settings (`/account`): display name, business name (prefills TurboTax export), default tax year (used by `TaxYearContext` after params/session), password change at `PATCH /account/password` (signs out other sessions), and password-confirmed account + data deletion (`User#destroy_with_data!`).
 - `app/controllers/amazon_connections_controller.rb`: SP-API OAuth (consent, Login URI, Redirect URI, disconnect).
 - `app/controllers/amazon_syncs_controller.rb`: starts a tax-year sync; `new` is the "sync wins" confirmation that removes a year's uploaded rows (`User#remove_uploaded_rows!`) before syncing it.
 - `app/controllers/concerns/tax_year_context.rb`: the app-wide tax year (`current_tax_year`, `tax_year_options`): `?year=` → session → defaults; reset on sign-in.
@@ -115,6 +116,7 @@ amazon_sp_api:
 
 ## Testing Notes
 
+- Sign-in is rate limited (10 per 3 minutes). Back-to-back runner scripts that each sign in can hit it; the symptom is a silent 302 to the sign-in page.
 - `test/` holds standalone Minitest files: `amazon_tax_categorizer_test.rb` (category rules, no Rails) and `amazon_year_activity_test.rb` (loads Rails in the test env; totals, TXF lines, plain labels). There is no `bin/rails test` setup (`test_helper`) yet.
 - When changing code, use the Rails boot check and focused manual verification (e.g. `bin/rails runner` scripts using `ActionDispatch::Integration::Session`; set `ActionController::Base.allow_forgery_protection = false` and `ActiveJob::Base.queue_adapter = :test` in the script so POSTs work and no real sync jobs run).
 - Avoid treating generated or local SQLite files under `storage/` as source changes unless the user explicitly asks for database state changes.

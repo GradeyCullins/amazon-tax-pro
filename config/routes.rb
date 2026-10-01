@@ -4,7 +4,8 @@ Rails.application.routes.draw do
   resource :site_gate, path: "unlock", only: [:new, :create]
   resource :session, only: [:new, :create, :destroy]
   resource :registration, path: "sign-up", only: [:new, :create]
-  resource :user_account, path: "account", only: [:show, :destroy]
+  resource :user_account, path: "account", only: [:show, :update, :destroy]
+  patch "account/password", to: "user_accounts#update_password", as: :user_account_password
 
   root 'dashboard#index'
 

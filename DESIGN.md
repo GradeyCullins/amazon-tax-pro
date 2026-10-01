@@ -48,7 +48,7 @@ account email · Sign out.
 | Run details | `/amazon-imports/:id` | Progress and what one sync or upload added | "Review YEAR" links; Delete this upload (uploads only) |
 | Sync confirmation | `/amazon/syncs/new` | Confirm removing uploaded rows before syncing their year | Remove N uploaded rows and sync YEAR |
 | Upload | `/amazon-imports/new` | Fallback upload of a Seller Central report | Upload report |
-| Account | `/account` | Connection status, last sync, account deletion | Delete account |
+| Profile & settings | `/account` (nav shows the display name, else the email) | Display name, business name (prefills new TurboTax export years), default tax year, connection status, password change (signs out other sessions), account deletion | Save profile |
 | Sign up / Sign in | `/sign-up`, `/session/new` | Email/password accounts; sign-up leads to Connect Amazon | Create account / Sign in |
 | Gate | `/unlock` | Shared-password gate in production (or with `SITE_GATE=1`) | Unlock |
 
@@ -76,9 +76,10 @@ export. The dashboard's "What needs attention" checklist shows these steps in th
 1. a valid `?year=` on any request (2000 through the current year); the choice is also saved in
    the session
 2. the year saved in the session
-3. last year, if the seller has rows dated in it
-4. the latest year with rows
-5. last year
+3. the seller's **default tax year** from Profile & settings, if they set one
+4. last year, if the seller has rows dated in it
+5. the latest year with rows
+6. last year
 
 More rules:
 
@@ -456,7 +457,7 @@ Recorded here, not yet fixed:
   - the input shadow `rgba(17,24,39,.2)`, the old palette's ink
 - **Alert flashes.** `.flash.alert` is gray in the app, so alerts barely differ from notices. On
   the gate it's red.
-- **Account email link.** It inherits the brand's 20px ink pill style through
+- **Account nav link.** The display name or email link inherits the brand's 20px ink pill style through
   `.nav a:first-child`.
 - **Duplicated tokens.** The gate layout copies a subset of the tokens.
 - **Favicon.** `public/favicon.png` is 1254×1254 and about 1.1 MB. It should be a small icon
@@ -482,3 +483,4 @@ Recorded here, not yet fixed:
 | 2026-10-01 | Year-scoped h1s include the year ("Review 2025", "Tax Packet 2025", "TurboTax Export 2025"). |
 | 2026-10-01 | Created this file as the design source of truth. |
 | 2026-10-01 | Merged PR #4 into the sync-first design: signed totals through `AmazonYearActivity` (credits net, shipping charges are expenses), gross receipts plus an after-fee revenue reference, plain-language row labels with Amazon details, and search, amount, and sort filters on Review. Kept accepted-only outputs, the shared tax year, and sync-wins, so the PR's per-import review page, featured priorities list, and API-over-upload source preference were not adopted. Sync runs record `sandbox_sample`, and the tax packet flags sandbox totals. |
+| 2026-10-01 | Merged PR #3 into the sync-first design. Added Profile & settings: display name, business name that prefills new TurboTax export years, a default tax year that `TaxYearContext` uses after an explicit or session year, and a password change that signs out other sessions. Not adopted: the review threshold preference, because Review's minimum amount filter covers it; the Featured review page; `User#effective_tax_year`; and the PR's guide copy. No data download card was added. |

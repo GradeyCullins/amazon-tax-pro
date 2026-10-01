@@ -1,27 +1,81 @@
-<div class="card auth-card">
-  <h1>Account</h1>
-  <p class="guide-copy">Signed in as <strong><%= @user.email_address %></strong>.</p>
+<div class="page-header">
+  <div>
+    <h1>Profile &amp; settings</h1>
+    <p class="muted">Signed in as <strong><%= @user.email_address %></strong>.</p>
+  </div>
+</div>
 
-  <h2>Amazon connection</h2>
-  <p class="guide-copy">
-    <% if @amazon_connection.nil? %>
-      Not connected. <%= link_to "Connect Amazon from the dashboard", root_path %>.
-    <% elsif @amazon_connection.active? %>
-      Connected to seller <%= @amazon_connection.selling_partner_id %>.
-      Last synced <%= @amazon_connection.last_synced_at ? l(@amazon_connection.last_synced_at, format: :short) : "never" %>.
-    <% else %>
-      Seller <%= @amazon_connection.selling_partner_id %> needs to be reconnected. <%= link_to "Reconnect from the dashboard", root_path %>.
-    <% end %>
-  </p>
-
-  <h2>Delete account</h2>
-  <p class="guide-copy">This permanently deletes your account, stored Amazon authorization, synced and uploaded transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
-
-  <%= form_with url: user_account_path, method: :delete, local: true, html: { onsubmit: "return confirm('Delete your account and all of its data? This cannot be undone.')" } do |form| %>
-    <div class="form-row">
-      <%= form.label :password, "Confirm password" %>
-      <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+<div class="grid profile-grid">
+  <div class="profile-column">
+    <div class="card">
+      <h2>Your profile</h2>
+      <%= form_with model: @user, url: user_account_path, method: :patch do |form| %>
+        <div class="form-row">
+          <%= form.label :display_name, "Display name" %>
+          <%= form.text_field :display_name, maxlength: 100, autocomplete: "name", placeholder: "Your name" %>
+          <small>Shown in the top right instead of your email.</small>
+        </div>
+        <div class="form-row">
+          <%= form.label :business_name, "Business name" %>
+          <%= form.text_field :business_name, maxlength: 100, autocomplete: "organization", placeholder: "Your Amazon business" %>
+          <small>Fills in the business name for new tax years on the TurboTax export.</small>
+        </div>
+        <div class="form-row">
+          <%= form.label :default_tax_year, "Default tax year" %>
+          <%= form.select :default_tax_year, [["Automatic (last year, or your latest year with data)", ""]] + (tax_year_options + [@user.default_tax_year]).compact.uniq.sort.reverse, selected: @user.default_tax_year %>
+          <small>Every page opens on this year when you sign in. You can still switch years on any page.</small>
+        </div>
+        <%= form.submit "Save profile", class: "button" %>
+      <% end %>
     </div>
-    <%= form.submit "Delete account and data", class: "button danger" %>
-  <% end %>
+
+    <div class="card">
+      <h2>Amazon connection</h2>
+      <p class="guide-copy">
+        <% if @amazon_connection.nil? %>
+          <span class="pill">Not connected</span> <%= link_to "Connect Amazon from the dashboard", root_path %>.
+        <% elsif @amazon_connection.active? %>
+          <span class="pill good">Connected</span> Seller <%= @amazon_connection.selling_partner_id %>.
+          Last synced <%= @amazon_connection.last_synced_at ? l(@amazon_connection.last_synced_at, format: :short) : "never" %>.
+        <% else %>
+          <span class="pill bad">Needs reconnect</span> Seller <%= @amazon_connection.selling_partner_id %>. <%= link_to "Reconnect from the dashboard", root_path %>.
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <div class="profile-column">
+    <div class="card">
+      <h2>Security</h2>
+      <h3>Change password</h3>
+      <%= form_with url: user_account_password_path, scope: :password_change, method: :patch do |form| %>
+        <div class="form-row">
+          <%= form.label :current_password, "Current password" %>
+          <%= form.password_field :current_password, required: true, autocomplete: "current-password" %>
+        </div>
+        <div class="form-row">
+          <%= form.label :password, "New password" %>
+          <%= form.password_field :password, required: true, minlength: 8, maxlength: 72, autocomplete: "new-password" %>
+        </div>
+        <div class="form-row">
+          <%= form.label :password_confirmation, "Confirm new password" %>
+          <%= form.password_field :password_confirmation, required: true, minlength: 8, maxlength: 72, autocomplete: "new-password" %>
+        </div>
+        <%= form.submit "Update password", class: "button" %>
+      <% end %>
+      <p class="note">Changing your password signs you out everywhere else.</p>
+    </div>
+
+    <div class="card">
+      <h2>Delete account</h2>
+      <p class="guide-copy">This permanently deletes your account, stored Amazon authorization, synced and uploaded transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
+      <%= form_with url: user_account_path, method: :delete, html: { onsubmit: "return confirm('Delete your account and all of its data? This cannot be undone.')" } do |form| %>
+        <div class="form-row">
+          <%= form.label :password, "Confirm password", for: "delete_password" %>
+          <%= form.password_field :password, required: true, autocomplete: "current-password", id: "delete_password" %>
+        </div>
+        <%= form.submit "Delete account and data", class: "button danger" %>
+      <% end %>
+    </div>
+  </div>
 </div>

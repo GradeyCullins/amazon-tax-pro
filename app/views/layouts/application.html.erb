@@ -356,6 +356,11 @@
       .auth-card { margin:36px auto 0; max-width:520px; transform:rotate(-.3deg); }
       .auth-card h1 { font-size:clamp(40px, 8vw, 64px); }
       .auth-card .form-row input { width:100%; }
+      .profile-grid { grid-template-columns:minmax(0, 1.4fr) minmax(260px, 1fr); align-items:start; }
+      .profile-column { display:grid; gap:18px; min-width:0; }
+      .profile-grid h3 { font-size:19px; margin:18px 0 12px; }
+      .profile-grid .form-row input, .profile-grid .form-row select { width:100%; }
+      .form-row small { color:var(--muted); font-size:13px; font-weight:750; line-height:1.35; }
       .pill {
         background:var(--surface-muted);
         border:3px solid var(--border);
@@ -393,6 +398,7 @@
         .nav { align-items:stretch; gap:8px; transform:none; }
         .nav a { flex:1 1 150px; padding:8px; text-align:center; }
         .page-header { display:grid; }
+        .profile-grid { grid-template-columns:1fr; }
         .actions, .page-header > .button { width:100%; }
         .actions .button, .page-header > .button { flex:1 1 160px; }
         .dashboard-main { grid-template-columns:1fr; }
@@ -425,7 +431,7 @@
           <%= nav_link "Tax Packet", tax_packet_path %>
           <%= nav_link "TurboTax Export", turbo_tax_export_path %>
           <div class="nav-account">
-            <%= link_to Current.user.email_address, user_account_path, class: "nav-email" %>
+            <%= link_to Current.user.display_name || Current.user.email_address, user_account_path, class: "nav-email" %>
             <%= button_to "Sign out", session_path, method: :delete, class: "button secondary" %>
           </div>
         <% end %>

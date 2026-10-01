@@ -38,6 +38,7 @@ class TurboTaxExportsController < ApplicationController
 
   def set_input
     @input = Current.user.turbo_tax_export_inputs.for_year(@year)
+    @input.business_name = Current.user.business_name if @input.new_record? && Current.user.business_name.present?
   end
 
   def input_params

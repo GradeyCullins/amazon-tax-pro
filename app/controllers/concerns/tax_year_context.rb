@@ -12,7 +12,7 @@ module TaxYearContext
     @current_tax_year ||= begin
       requested = valid_tax_year(params[:year])
       remember_tax_year(requested) if requested
-      requested || valid_tax_year(session[:tax_year]) || default_tax_year
+      requested || valid_tax_year(session[:tax_year]) || valid_tax_year(Current.user&.default_tax_year) || default_tax_year
     end
   end
 

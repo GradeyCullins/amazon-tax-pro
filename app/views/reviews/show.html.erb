@@ -1,0 +1,130 @@
+<% year = current_tax_year %>
+<div class="page-header">
+  <div>
+    <h1>Review <%= year %></h1>
+    <p class="muted">We categorize every Amazon transaction for you. Pick a category for the rows we couldn't place, and spot-check the rest before you file.</p>
+  </div>
+  <div class="actions">
+    <%= render "shared/tax_year_switcher" %>
+  </div>
+</div>
+
+<% if (active_sync = @year_status.active_sync) %>
+  <div class="callout warn">
+    <p>Syncing <%= year %> from Amazon. New rows show up here when it finishes, so refresh to check. <%= link_to "View progress", amazon_import_batch_path(active_sync) %></p>
+  </div>
+<% end %>
+
+<%= render "shared/mixed_source_warning", year_status: @year_status %>
+
+<% if !@year_status.rows? %>
+  <div class="card empty-state">
+    <h2>No <%= year %> transactions yet</h2>
+    <p class="guide-copy">
+      <% if @connection&.active? %>
+        Sync <%= year %> from Amazon and we'll categorize every transaction. Anything we can't place shows up here.
+      <% elsif @connection %>
+        Amazon needs you to reconnect before you can sync <%= year %>.
+      <% else %>
+        Connect your Amazon seller account and sync <%= year %>. Anything we can't categorize shows up here.
+      <% end %>
+    </p>
+    <div class="actions">
+      <%= render "amazon_syncs/sync_action", year: year %>
+    </div>
+  </div>
+<% else %>
+  <div class="card">
+    <nav class="tabs" aria-label="Review status">
+      <% ReviewsController::STATUS_FILTERS.each do |status, label| %>
+        <%= link_to review_filter_path(status: status), aria: { current: ("page" if status == @status) } do %>
+          <%= label %><span class="tab-count"><%= number_with_delimiter(@counts.fetch(status)) %></span>
+        <% end %>
+      <% end %>
+    </nav>
+
+    <div class="filters">
+      <%= form_with url: review_path, method: :get, class: "inline-form" do |form| %>
+        <%= hidden_field_tag :year, year, id: nil %>
+        <% if @status != ReviewsController::DEFAULT_STATUS %>
+          <%= hidden_field_tag :status, @status, id: nil %>
+        <% end %>
+        <% if @import %>
+          <%= hidden_field_tag :import_id, @import.id, id: nil %>
+        <% end %>
+        <%= form.label :category, "Category", for: "review_category" %>
+        <%= form.select :category, AmazonImportRow.category_options, { include_blank: "All categories", selected: @category }, id: "review_category" %>
+        <%= form.submit "Filter", name: nil, class: "button small secondary" %>
+      <% end %>
+      <% if @import %>
+        <p class="note">
+          Only rows from <%= link_to @import.display_name, amazon_import_batch_path(@import) %>.
+          <%= link_to "Show every sync and upload", review_filter_path(import_id: nil) %>
+        </p>
+      <% end %>
+    </div>
+
+    <% if @pagination.total_count.zero? %>
+      <div class="empty-state">
+        <% if @status == "needs_review" && @year_status.needs_review_count.zero? %>
+          <h2>All caught up</h2>
+          <p class="guide-copy">Every <%= year %> row has a category. Spot-check what we auto-categorized, then add your cost of goods sold and export.</p>
+          <div class="actions">
+            <%= link_to "Spot-check auto-categorized rows", review_filter_path(status: "auto_accepted", category: nil, import_id: nil), class: "button secondary" %>
+            <%= link_to "Tax packet", tax_packet_path(year: year), class: "button secondary" %>
+            <%= link_to "TurboTax export", turbo_tax_export_path(year: year), class: "button" %>
+          </div>
+        <% elsif @category || @import %>
+          <p class="guide-copy">No rows match these filters.</p>
+          <div class="actions">
+            <%= link_to "Clear filters", review_filter_path(category: nil, import_id: nil), class: "button small secondary" %>
+          </div>
+        <% else %>
+          <p class="guide-copy"><%= { "user_accepted" => "You haven't accepted or changed any #{year} rows yet.", "skipped" => "You haven't skipped any #{year} rows." }.fetch(@status, "No #{year} rows here.") %></p>
+        <% end %>
+      </div>
+    <% else %>
+      <table class="tight">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Description</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Status</th>
+            <th scope="col">Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pagination.records.each do |row| %>
+            <tr>
+              <td><%= row.posted_on %></td>
+              <td>
+                <strong><%= row.description.presence || "Amazon transaction" %></strong>
+                <% if row.order_id.present? %>
+                  <div class="muted">Order <%= row.order_id %></div>
+                <% end %>
+                <% if row.amazon_import_batch.source_upload? %>
+                  <div class="muted">Upload: <%= row.amazon_import_batch.display_name %></div>
+                <% end %>
+              </td>
+              <td><%= money(row.amount_cents) %></td>
+              <td><%= review_pill(row.review_status) %></td>
+              <td>
+                <%= form_with model: row, url: amazon_import_row_path(row), class: "inline-form row-form" do |form| %>
+                  <%= form.select :tax_category, AmazonImportRow.category_options, {}, id: dom_id(row, :tax_category), aria: { label: "Tax category" } %>
+                  <% if row.skipped? %>
+                    <%= form.submit "Restore", class: "button small" %>
+                  <% else %>
+                    <%= form.submit row.pending? ? "Accept" : "Save", class: "button small" %>
+                    <%= form.submit "Skip", class: "button small secondary" %>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <%= render "shared/pagination", pagination: @pagination %>
+    <% end %>
+  </div>
+<% end %>

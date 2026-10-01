@@ -1,8 +1,8 @@
 class TaxPacketsController < ApplicationController
   def show
-    @year = params.fetch(:year, Date.current.year).to_i
-    @totals = Current.user.amazon_import_rows.accepted_tax_totals(@year)
-    @accepted_rows = Current.user.amazon_import_rows.accepted.for_year(@year).order(:posted_on, :source_row_number)
-    @uncategorized_count = Current.user.amazon_import_rows.pending.where(tax_category: "uncategorized").count
+    @year = current_tax_year
+    @year_status = TaxYearStatus.new(Current.user, @year)
+    @totals = @year_status.rows.accepted_tax_totals(@year)
+    @pagination = Pagination.new(@year_status.rows.accepted.order(:posted_on, :source_row_number, :id), page: params[:page])
   end
 end

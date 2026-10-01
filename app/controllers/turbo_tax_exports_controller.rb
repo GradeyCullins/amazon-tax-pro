@@ -8,7 +8,7 @@ class TurboTaxExportsController < ApplicationController
 
   def update
     if @input.update(input_params)
-      redirect_to turbo_tax_export_path(year: @input.tax_year), notice: "Updated TurboTax export inputs."
+      redirect_to turbo_tax_export_path(year: @input.tax_year), notice: "Saved your #{@input.tax_year} cost of goods sold and business details."
     else
       @export = TurboTaxExport.new(year: @year, input: @input)
       flash.now[:alert] = @input.errors.full_messages.to_sentence
@@ -33,7 +33,7 @@ class TurboTaxExportsController < ApplicationController
   private
 
   def set_year
-    @year = params[:year].presence&.to_i || Current.user.amazon_import_rows.where.not(posted_on: nil).maximum("strftime('%Y', posted_on)")&.to_i || Date.current.year
+    @year = current_tax_year
   end
 
   def set_input

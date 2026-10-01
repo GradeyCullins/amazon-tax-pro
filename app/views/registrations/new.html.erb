@@ -1,6 +1,6 @@
 <div class="card auth-card">
   <h1>Create account</h1>
-  <p class="guide-copy" style="margin-bottom:16px;">After signing up you can connect your Amazon seller account and import a tax year automatically.</p>
+  <p class="guide-copy">Next, you'll connect your Amazon seller account so we can sync your transactions. Amazon only allows this on a Professional selling plan, and the account's primary user has to approve it.</p>
 
   <%= form_with model: @user, url: registration_path, local: true do |form| %>
     <div class="form-row">
@@ -18,5 +18,5 @@
     <%= form.submit "Create account", class: "button" %>
   <% end %>
 
-  <p class="guide-copy" style="margin-top:18px;">Already have an account? <%= link_to "Sign in", new_session_path %></p>
+  <p class="guide-copy section">Already have an account? <%= link_to "Sign in", new_session_path %></p>
 </div>

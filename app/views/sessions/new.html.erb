@@ -1,6 +1,6 @@
 <div class="card auth-card">
   <h1>Sign in</h1>
-  <p class="guide-copy" style="margin-bottom:16px;">Sign in to review your Amazon imports and tax exports.</p>
+  <p class="guide-copy">Sign in to sync your Amazon transactions and get your tax files ready.</p>
 
   <%= form_with url: session_path, local: true do |form| %>
     <div class="form-row">
@@ -14,5 +14,5 @@
     <%= form.submit "Sign in", class: "button" %>
   <% end %>
 
-  <p class="guide-copy" style="margin-top:18px;">New here? <%= link_to "Create an account", new_registration_path %></p>
+  <p class="guide-copy section">New here? <%= link_to "Create an account", new_registration_path %></p>
 </div>

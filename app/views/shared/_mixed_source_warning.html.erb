@@ -1,0 +1,13 @@
+<%# locals: (year_status:) -%>
+<% if year_status.mixed_sources? %>
+  <div class="callout warn">
+    <p><strong><%= year_status.year %> has both synced and uploaded rows.</strong> An uploaded report can repeat transactions the sync already pulled in, so they may be counted twice. Synced data should replace the upload.</p>
+    <div class="actions">
+      <% if Current.user.amazon_connection&.active? && year_status.syncable? %>
+        <%= link_to "Remove uploaded rows and re-sync", new_amazon_sync_path(tax_year: year_status.year), class: "button small" %>
+      <% else %>
+        <%= link_to "Delete the upload in Sync history", amazon_import_batches_path, class: "button small secondary" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

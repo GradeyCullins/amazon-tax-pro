@@ -1,31 +1,35 @@
 <div class="page-header">
   <div>
-    <h1>TurboTax Export</h1>
-    <p class="muted">Generate TurboTax Desktop TXF files and review packets from Amazon seller activity.</p>
+    <h1>TurboTax Export <%= @year %></h1>
+    <p class="muted">Turn your <%= @year %> rows that count into a TurboTax Desktop TXF file, plus an audit CSV for your records.</p>
   </div>
   <div class="actions">
-    <%= link_to "Amazon data", amazon_import_batches_path, class: "button secondary" %>
+    <%= render "shared/tax_year_switcher" %>
+    <%= link_to "Review", review_path(year: @year), class: "button secondary" %>
     <%= link_to "Tax packet", tax_packet_path(year: @year), class: "button secondary" %>
   </div>
 </div>
 
-<div class="card">
-  <%= form_with url: turbo_tax_export_path, method: :get, local: true, class: "inline-form" do |form| %>
-    <%= form.label :year, "Tax year" %>
-    <%= form.number_field :year, value: @year, min: 2000, max: Date.current.year + 1 %>
-    <%= form.submit "Update", class: "button small" %>
-  <% end %>
-</div>
+<%= render "shared/mixed_source_warning", year_status: @export.year_status %>
+
+<% if !@export.year_status.rows? %>
+  <div class="callout warn">
+    <p>No <%= @year %> transactions yet. Sync <%= @year %> from Amazon first; you can still enter cost of goods sold below.</p>
+    <div class="actions">
+      <%= render "amazon_syncs/sync_action", year: @year %>
+    </div>
+  </div>
+<% end %>
 
 <div class="grid dashboard-main">
   <div class="card">
-    <h2 style="margin-top:0;">Schedule C Preview</h2>
+    <h2>Schedule C preview</h2>
     <table class="tight">
       <thead>
         <tr>
-          <th>TXF Ref</th>
-          <th>TurboTax Line</th>
-          <th>Amount</th>
+          <th scope="col">TXF ref</th>
+          <th scope="col">TurboTax line</th>
+          <th scope="col">Amount</th>
         </tr>
       </thead>
       <tbody>
@@ -33,26 +37,29 @@
           <tr>
             <td><%= line.txf_ref %></td>
             <td><%= line.label %></td>
-            <td><%= number_to_currency(line.amount_cents / 100.0) %></td>
+            <td><%= money(line.amount_cents) %></td>
           </tr>
         <% end %>
         <% if @export.lines.empty? %>
-          <tr><td colspan="3">No categorized Amazon rows are ready for <%= @year %>.</td></tr>
+          <tr><td colspan="3">No <%= @year %> rows count toward Schedule C yet.</td></tr>
         <% end %>
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0;">Readiness</h2>
+    <h2>Readiness</h2>
     <% if @export.warnings.any? %>
-      <ul style="margin-top:0;">
+      <ul>
         <% @export.warnings.each do |warning| %>
           <li><%= warning %></li>
         <% end %>
       </ul>
+      <% if @export.needs_review_count.positive? %>
+        <p class="guide-copy"><%= link_to "Review #{@year}", review_path(year: @year) %> to include those rows.</p>
+      <% end %>
     <% else %>
-      <p>No export warnings for <%= @year %>.</p>
+      <p class="guide-copy">No export warnings for <%= @year %>.</p>
     <% end %>
     <div class="actions">
       <%= link_to "Download TXF", download_turbo_tax_export_path(year: @year), class: "button" %>
@@ -62,9 +69,9 @@
   </div>
 </div>
 
-<div class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Manual COGS Inputs</h2>
-  <p class="muted">Amazon settlement data does not know what the seller paid for inventory. Enter annual totals here before generating the final TXF.</p>
+<div class="card section">
+  <h2>Cost of goods sold</h2>
+  <p class="guide-copy">Amazon doesn't know what you paid for inventory. Enter your annual totals before you download the final TXF.</p>
   <%= form_with model: @input, url: turbo_tax_export_path(year: @year), method: :patch, local: true do |form| %>
     <%= form.hidden_field :tax_year, value: @year %>
     <div class="form-row">
@@ -86,19 +93,20 @@
         </div>
       <% end %>
     </div>
-    <%= form.submit "Save COGS inputs", class: "button" %>
+    <%= form.submit "Save cost of goods sold", class: "button" %>
   <% end %>
 </div>
 
-<div class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Excluded Rows</h2>
+<div class="card section">
+  <h2>Left out of Schedule C</h2>
+  <p class="guide-copy">Transfers to your bank, marketplace-withheld sales tax, and reserves aren't income or expenses.</p>
   <table class="tight">
     <thead>
       <tr>
-        <th>Date</th>
-        <th>Category</th>
-        <th>Description</th>
-        <th>Amount</th>
+        <th scope="col">Date</th>
+        <th scope="col">Category</th>
+        <th scope="col">Description</th>
+        <th scope="col">Amount</th>
       </tr>
     </thead>
     <tbody>
@@ -107,12 +115,15 @@
           <td><%= row.posted_on || "Unknown" %></td>
           <td><%= row.tax_category_name %></td>
           <td><%= row.description %></td>
-          <td><%= number_to_currency(row.amount_cents / 100.0) %></td>
+          <td><%= money(row.amount_cents) %></td>
         </tr>
       <% end %>
       <% if @export.excluded_rows.empty? %>
-        <tr><td colspan="4">No excluded rows for <%= @year %>.</td></tr>
+        <tr><td colspan="4">Nothing left out for <%= @year %>.</td></tr>
       <% end %>
     </tbody>
   </table>
+  <% if @export.excluded_rows.size > 50 %>
+    <p class="note">Showing the first 50 of <%= number_with_delimiter(@export.excluded_rows.size) %>. The audit CSV has every row.</p>
+  <% end %>
 </div>

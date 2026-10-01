@@ -2,7 +2,7 @@ require "csv"
 require "bigdecimal/util"
 
 class AmazonSettlementImporter
-  Result = Struct.new(:batch, :errors, keyword_init: true)
+  Result = Struct.new(:batch, :errors, :skipped_count, :skipped_years, keyword_init: true)
 
   def self.import!(uploaded_file, user:)
     new(uploaded_file, user: user).import!
@@ -14,7 +14,7 @@ class AmazonSettlementImporter
   end
 
   def import!
-    return Result.new(errors: ["Choose an Amazon settlement CSV or TSV file."]) if @uploaded_file.blank?
+    return Result.new(errors: ["Choose a Seller Central CSV or TSV report to upload."]) if @uploaded_file.blank?
 
     content = @uploaded_file.read
     separator = detect_separator(content)
@@ -23,25 +23,53 @@ class AmazonSettlementImporter
     parsed_rows = CSV.parse(content, headers: true, col_sep: separator)
     return Result.new(errors: ["The file does not contain a header row."]) if parsed_rows.headers.blank?
 
-    batch = @user.amazon_import_batches.create!(
-      source: :upload,
-      filename: @uploaded_file.original_filename.presence || "amazon-settlement",
-      imported_at: Time.current
-    )
+    # Sync wins: rows dated in a year Amazon sync already covers would double count, so they're left out.
+    synced_years = @user.synced_tax_years.to_set
+    skipped_years = Set.new
+    skipped_count = 0
+    row_attributes = []
 
     parsed_rows.each.with_index(header_line_number + 1) do |row, row_number|
       normalize_row(row.to_h).each do |attrs|
-        batch.amazon_import_rows.create!(attrs.merge(user: @user, source_row_number: row_number, raw_data: row.to_h))
+        if attrs[:posted_on] && synced_years.include?(attrs[:posted_on].year)
+          skipped_years << attrs[:posted_on].year
+          skipped_count += 1
+          next
+        end
+
+        row_attributes << attrs.merge(
+          source_row_number: row_number,
+          raw_data: row.to_h,
+          status: AmazonImportRow.initial_status_for(attrs[:tax_category])
+        )
       end
     end
 
-    batch.refresh_status!
-    Result.new(batch: batch, errors: [])
+    if row_attributes.empty?
+      return Result.new(errors: [skipped_years.any? ? all_rows_synced_message(skipped_years) : "No transactions with amounts were found in this file."])
+    end
+
+    batch = AmazonImportBatch.transaction do
+      @user.amazon_import_batches.create!(
+        source: :upload,
+        filename: @uploaded_file.original_filename.presence || "amazon-report",
+        imported_at: Time.current
+      ).tap do |new_batch|
+        row_attributes.each { |attrs| new_batch.amazon_import_rows.create!(attrs.merge(user: @user)) }
+        new_batch.refresh_status!
+      end
+    end
+
+    Result.new(batch: batch, errors: [], skipped_count: skipped_count, skipped_years: skipped_years.sort)
   rescue CSV::MalformedCSVError => error
     Result.new(errors: ["Could not parse the file: #{error.message}"])
   end
 
   private
+
+  def all_rows_synced_message(years)
+    "Every row in this report is from #{years.sort.to_sentence}, which you've already synced from Amazon. Synced data replaces uploads, so nothing was imported."
+  end
 
   def detect_separator(content)
     first_line = content.lines.find { |line| line.include?("date/time") || line.include?("posted-date") } || content.lines.first.to_s
@@ -153,7 +181,8 @@ class AmazonSettlementImporter
   end
 
   def parse_date(value)
-    Date.parse(value.to_s)
+    date = Date.parse(value.to_s)
+    date if AmazonImportRow.tax_years.cover?(date.year)
   rescue ArgumentError, TypeError
     nil
   end

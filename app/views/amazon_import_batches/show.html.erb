@@ -4,12 +4,11 @@
 
 <div class="page-header">
   <div>
-    <h1>Review Amazon Import</h1>
-    <p class="muted"><%= @batch.filename %> · <%= @batch.source_label %> · <%= @batch.row_count %> rows · <%= @batch.status.humanize %></p>
+    <h1><%= @batch.display_name %></h1>
+    <p class="muted"><%= @batch.source_label %> · started <%= l(@batch.created_at, format: :short) %> · <%= pluralize(number_with_delimiter(@batch.row_count), "row") %> added · <%= @batch.status_label %></p>
   </div>
   <div class="actions">
-    <%= link_to "Tax packet", tax_packet_path, class: "button secondary" %>
-    <%= link_to "All imports", amazon_import_batches_path, class: "button secondary" %>
+    <%= link_to "Sync history", amazon_import_batches_path, class: "button secondary" %>
   </div>
 </div>
 
@@ -17,75 +16,72 @@
   <div class="card connect-card">
     <h2>Amazon sync · <%= @batch.tax_year %></h2>
     <% if AmazonSpApi.sandbox? %>
-      <p class="guide-copy">Sandbox sample data uses Amazon's fixed dates, regardless of the selected tax year. Re-syncing skips sample rows already imported.</p>
+      <p class="guide-copy">Sandbox sample data keeps Amazon's fixed dates, whatever tax year you sync. Re-syncing skips sample rows you already have.</p>
     <% end %>
     <div class="connect-meta">
-      <span class="pill <%= @batch.sync_failed? ? "bad" : @batch.sync_succeeded? ? "good" : "warn" %>"><%= @batch.sync_status.to_s.humanize %></span>
-      <span class="pill"><%= @batch.transactions_fetched %> transactions fetched</span>
-      <span class="pill"><%= @batch.row_count %> new review rows</span>
+      <%= sync_pill(@batch) %>
+      <span class="pill"><%= pluralize(number_with_delimiter(@batch.transactions_fetched.to_i), "transaction") %> fetched</span>
+      <span class="pill"><%= pluralize(number_with_delimiter(@batch.row_count), "new row") %></span>
       <% if @batch.finished_at %>
         <span class="pill">Finished <%= l(@batch.finished_at, format: :short) %></span>
       <% end %>
     </div>
     <% if @batch.sync_active? %>
-      <p class="guide-copy">Pulling transactions from Amazon. Amazon limits how fast data can be requested, so a full year can take a few minutes. This page refreshes automatically.</p>
+      <p class="guide-copy">Pulling transactions from Amazon. Amazon limits how fast data can be requested, so a full year can take a few minutes. This page refreshes on its own.</p>
     <% elsif @batch.sync_failed? %>
-      <div class="callout" style="margin-top:0;"><p><%= @batch.error_message %></p></div>
-      <p class="guide-copy">Rows imported before the error are kept. Fix the issue and run the sync again from the dashboard; already-imported transactions are skipped.</p>
+      <div class="callout"><p><%= @batch.error_message %></p></div>
+      <p class="guide-copy">Rows added before the error are kept. Fix the problem and sync again; transactions you already have are skipped.</p>
+      <div class="actions">
+        <%= render "amazon_syncs/sync_action", year: @batch.tax_year %>
+      </div>
     <% elsif @batch.row_count.zero? %>
-      <p class="guide-copy">No new transactions were found. Everything for <%= @batch.tax_year %> may already be imported in an earlier sync.</p>
+      <p class="guide-copy">No new transactions. An earlier sync may already have everything for <%= @batch.tax_year %>.</p>
     <% end %>
   </div>
 <% end %>
 
-<div class="card">
-  <table class="tight">
-    <thead>
-      <tr>
-        <th>Row</th>
-        <th>Date</th>
-        <th>Description</th>
-        <th>Amount</th>
-        <th>Tax category</th>
-        <th>Status</th>
-        <th>Review note</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @rows.each do |row| %>
+<div class="card section">
+  <h2>What this <%= @batch.source_sp_api? ? "sync" : "upload" %> added</h2>
+  <% if @year_summaries.empty? && @undated_count.zero? %>
+    <p class="guide-copy"><%= @batch.sync_active? ? "Nothing yet. Rows show up here as the sync finds them." : "No rows were added." %></p>
+  <% else %>
+    <table class="tight">
+      <thead>
         <tr>
-          <td><%= row.source_row_number %></td>
-          <td><%= row.posted_on || "Unknown" %></td>
-          <td>
-            <strong><%= row.description.presence || "Amazon settlement row" %></strong>
-            <% if row.order_id.present? %>
-              <div class="muted">Order <%= row.order_id %></div>
-            <% end %>
-          </td>
-          <td><%= number_to_currency(row.amount_cents / 100.0) %></td>
-          <td>
-            <% if row.pending? %>
-              <%= form_with model: row, url: amazon_import_row_path(row), local: true, class: "inline-form" do |form| %>
-                <%= form.select :tax_category, AmazonImportRow.category_options %>
-                <%= form.submit "Accept", class: "button small" %>
-                <%= form.submit "Skip", class: "button small secondary" %>
-              <% end %>
-            <% else %>
-              <%= row.tax_category_name %>
-            <% end %>
-          </td>
-          <td><%= row.status.humanize %></td>
-          <td>
-            <% if row.accepted? %>
-              Included in tax summaries
-            <% elsif row.skipped? %>
-              Excluded from tax summaries
-            <% else %>
-              Waiting for review
-            <% end %>
-          </td>
+          <th scope="col">Tax year</th>
+          <th scope="col">Rows</th>
+          <th scope="col">Needs review</th>
+          <th scope="col">Counted</th>
+          <th scope="col">Skipped</th>
+          <th scope="col"></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @year_summaries.each do |year, counts| %>
+          <tr>
+            <th scope="row"><%= year %></th>
+            <td><%= number_with_delimiter(counts.values.sum) %></td>
+            <td><%= counts.fetch("needs_review").zero? ? "None" : review_pill("needs_review", number_with_delimiter(counts.fetch("needs_review"))) %></td>
+            <td><%= number_with_delimiter(counts.fetch("auto_accepted") + counts.fetch("user_accepted")) %></td>
+            <td><%= number_with_delimiter(counts.fetch("skipped")) %></td>
+            <td><%= link_to "Review #{year}", review_path(year: year, import_id: @batch.id, status: (counts.fetch("needs_review").zero? ? "all" : nil)) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @undated_count.positive? %>
+      <p class="note"><%= pluralize(number_with_delimiter(@undated_count), "row") %> had no date we could read, so <%= @undated_count == 1 ? "it doesn't" : "they don't" %> count toward any tax year.</p>
+    <% end %>
+  <% end %>
 </div>
+
+<% if @batch.source_upload? %>
+  <div class="card section">
+    <h2>Delete this upload</h2>
+    <p class="guide-copy">Removes the upload and its <%= pluralize(number_with_delimiter(@batch.row_count), "row") %> from Review and your totals. Synced rows aren't affected.</p>
+    <div class="actions">
+      <%= button_to "Delete this upload", amazon_import_batch_path(@batch), method: :delete, class: "button danger",
+            form: { onsubmit: "return confirm('Delete this upload and its rows? This cannot be undone.')" } %>
+    </div>
+  </div>
+<% end %>

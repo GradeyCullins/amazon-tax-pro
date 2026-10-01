@@ -1,0 +1,39 @@
+<div class="page-header">
+  <div>
+    <h1>Sync <%= @tax_year %> from Amazon</h1>
+    <p class="muted">You uploaded reports with <%= @tax_year %> rows. Synced data replaces uploads for the years it covers, so nothing is counted twice.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>These uploaded rows will be removed</h2>
+  <table class="tight">
+    <thead>
+      <tr>
+        <th scope="col">Upload</th>
+        <th scope="col">Uploaded</th>
+        <th scope="col"><%= @tax_year %> rows</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @uploads.each do |batch, row_count| %>
+        <tr>
+          <td><%= link_to batch.display_name, amazon_import_batch_path(batch) %></td>
+          <td><%= l(batch.imported_at, format: :short) %></td>
+          <td><%= number_with_delimiter(row_count) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="note">
+    Rows from other years in these uploads stay.
+    <% if @reviewed_row_count.positive? %>
+      You reviewed <%= number_with_delimiter(@reviewed_row_count) %> of these rows. Those choices don't carry over, so check Review after the sync.
+    <% end %>
+  </p>
+  <div class="actions section">
+    <%= button_to "Remove #{pluralize(number_with_delimiter(@uploaded_row_count), "uploaded row")} and sync #{@tax_year}", amazon_syncs_path,
+          params: { tax_year: @tax_year, remove_uploads: 1 }, class: "button danger" %>
+    <%= link_to "Cancel", root_path, class: "button secondary" %>
+  </div>
+</div>

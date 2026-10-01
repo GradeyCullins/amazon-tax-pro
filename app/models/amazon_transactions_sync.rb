@@ -22,7 +22,7 @@ class AmazonTransactionsSync
   end
 
   def run!
-    raise AmazonSpApi::Error, "This import is not linked to an Amazon connection." unless @connection
+    raise AmazonSpApi::Error, "This sync isn't linked to an Amazon connection." unless @connection
 
     @batch.update!(sync_status: :running, started_at: Time.current, error_message: nil)
     @row_number = @batch.amazon_import_rows.maximum(:source_row_number).to_i
@@ -104,7 +104,8 @@ class AmazonTransactionsSync
       next if existing_ids.include?(attrs[:external_id])
 
       @row_number += 1
-      @batch.amazon_import_rows.create!(attrs.merge(user: @user, source_row_number: @row_number))
+      status = AmazonImportRow.initial_status_for(attrs[:tax_category])
+      @batch.amazon_import_rows.create!(attrs.merge(user: @user, source_row_number: @row_number, status: status))
     rescue ActiveRecord::RecordNotUnique
       next
     end

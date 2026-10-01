@@ -16,6 +16,6 @@ class UserAccountsController < ApplicationController
 
     terminate_session
     user.destroy_with_data!
-    redirect_to new_session_path, notice: "Your account, Amazon connection, and imported data were deleted. Remember to remove the app in Seller Central → Manage Your Apps.", status: :see_other
+    redirect_to new_session_path, notice: "Your account, Amazon connection, and transaction data were deleted. Remember to remove the app in Seller Central → Manage Your Apps.", status: :see_other
   end
 end

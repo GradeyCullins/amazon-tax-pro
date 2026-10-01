@@ -1,19 +1,23 @@
 <div class="card auth-card">
   <h1>Account</h1>
-  <p class="guide-copy" style="margin-bottom:16px;">Signed in as <strong><%= @user.email_address %></strong>.</p>
-  <p class="guide-copy" style="margin-bottom:16px;">
-    Amazon:
-    <% if @amazon_connection %>
-      connected (seller <%= @amazon_connection.selling_partner_id %>)
+  <p class="guide-copy">Signed in as <strong><%= @user.email_address %></strong>.</p>
+
+  <h2>Amazon connection</h2>
+  <p class="guide-copy">
+    <% if @amazon_connection.nil? %>
+      Not connected. <%= link_to "Connect Amazon from the dashboard", root_path %>.
+    <% elsif @amazon_connection.active? %>
+      Connected to seller <%= @amazon_connection.selling_partner_id %>.
+      Last synced <%= @amazon_connection.last_synced_at ? l(@amazon_connection.last_synced_at, format: :short) : "never" %>.
     <% else %>
-      not connected
+      Seller <%= @amazon_connection.selling_partner_id %> needs to be reconnected. <%= link_to "Reconnect from the dashboard", root_path %>.
     <% end %>
   </p>
 
   <h2>Delete account</h2>
-  <p class="guide-copy" style="margin-bottom:16px;">This permanently deletes your account, stored Amazon authorization, imported transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
+  <p class="guide-copy">This permanently deletes your account, stored Amazon authorization, synced and uploaded transactions, and TurboTax inputs. Also remove Amazon Tax Pro in Seller Central → Manage Your Apps.</p>
 
-  <%= form_with url: user_account_path, method: :delete, local: true, html: { onsubmit: "return confirm('Delete your account and all imported data? This cannot be undone.')" } do |form| %>
+  <%= form_with url: user_account_path, method: :delete, local: true, html: { onsubmit: "return confirm('Delete your account and all of its data? This cannot be undone.')" } do |form| %>
     <div class="form-row">
       <%= form.label :password, "Confirm password" %>
       <%= form.password_field :password, required: true, autocomplete: "current-password" %>

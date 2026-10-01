@@ -11,7 +11,7 @@ class AmazonConnectionsController < ApplicationController
   def new
     if AmazonSpApi.sandbox?
       AmazonConnection.connect!(user: Current.user, selling_partner_id: "sandbox-user-#{Current.user.id}", refresh_token: "sandbox-credentials")
-      return redirect_to root_path, notice: "Amazon sandbox connected. Sync a tax year to import mock transactions."
+      return redirect_to root_path, notice: "Amazon sandbox connected. Sync a tax year to pull in Amazon's sample transactions."
     end
 
     redirect_to AmazonSpApi.consent_url(state: issue_oauth_state, redirect_uri: callback_amazon_connection_url), allow_other_host: true
@@ -39,7 +39,7 @@ class AmazonConnectionsController < ApplicationController
 
     refresh_token = AmazonSpApi.exchange_authorization_code!(params[:spapi_oauth_code])
     AmazonConnection.connect!(user: Current.user, selling_partner_id: params[:selling_partner_id], refresh_token: refresh_token)
-    redirect_to root_path, notice: "Amazon seller account connected. Choose a tax year and sync your transactions."
+    redirect_to root_path, notice: "Amazon seller account connected. Next, sync a tax year to pull in your transactions."
   rescue AmazonSpApi::Error => error
     redirect_to root_path, alert: error.message
   rescue ActiveRecord::RecordInvalid => error
@@ -49,13 +49,13 @@ class AmazonConnectionsController < ApplicationController
 
   def destroy
     Current.user.amazon_connection&.destroy!
-    redirect_to root_path, notice: "Amazon disconnected and its stored authorization deleted. To fully revoke access, also remove Amazon Tax Pro under Seller Central → Apps and Services → Manage Your Apps."
+    redirect_to root_path, notice: "Amazon disconnected. We deleted the stored authorization; rows you already synced stay. To fully revoke access, also remove Amazon Tax Pro under Seller Central → Apps and Services → Manage Your Apps."
   end
 
   private
 
   def require_sp_api_configuration
-    redirect_to root_path, alert: "Amazon connection isn't available yet: SP-API credentials are not configured." unless AmazonSpApi.configured?
+    redirect_to root_path, alert: "Connecting Amazon isn't available right now. You can upload a Seller Central report instead." unless AmazonSpApi.configured?
   end
 
   def issue_oauth_state

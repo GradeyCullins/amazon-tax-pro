@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. Sellers create an account, connect their Amazon Seller Central account through the Selling Partner API (SP-API), and sync a tax year's financial transactions. Manual upload of settlement or 2025 transaction report CSV/TSV files remains as a fallback. Users review and categorize rows, then generate tax packet and TurboTax export views.
+Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. The app is **sync-first**: sellers create an account, connect their Amazon Seller Central account through the Selling Partner API (SP-API), and sync a tax year's financial transactions. Rows with a suggested category are auto-accepted; sellers only fix the Uncategorized rows on the per-year Review page, add cost of goods sold, then use the tax packet and TurboTax export. Uploading a settlement or 2025 transaction report CSV/TSV is a hidden fallback for sellers who can't connect, and synced data always wins over uploads.
+
+`DESIGN.md` is the source of truth for product, UX, visual, and copy decisions; follow it and update it with any design change.
 
 ## Stack
 
@@ -15,22 +17,32 @@ Amazon Tax Pro is a small multi-tenant Rails app for Amazon seller tax prep. Sel
 
 ## Key Paths
 
-- `config/routes.rb`: site gate, auth, sign-up, dashboard, Amazon connection/sync, imports, tax packet, TurboTax export.
+- `DESIGN.md`: design source of truth (principles, IA, tokens, components, copy glossary, decision log).
+- `config/routes.rb`: site gate, auth, sign-up, dashboard, Amazon connection/sync, Review, Sync history (`/amazon-imports`), tax packet, TurboTax export.
 - `app/controllers/concerns/site_gate.rb`: shared-password gate (production, or `SITE_GATE=1`); 30-day signed cookie tied to the password.
 - `app/controllers/concerns/authentication.rb`, `sessions_controller.rb`, `registrations_controller.rb`: user accounts.
 - `app/controllers/user_accounts_controller.rb`: account page (`/account`) with password-confirmed account + data deletion (`User#destroy_with_data!`).
 - `app/controllers/amazon_connections_controller.rb`: SP-API OAuth (consent, Login URI, Redirect URI, disconnect).
-- `app/controllers/amazon_syncs_controller.rb`: starts a tax-year sync.
+- `app/controllers/amazon_syncs_controller.rb`: starts a tax-year sync; `new` is the "sync wins" confirmation that removes a year's uploaded rows (`User#remove_uploaded_rows!`) before syncing it.
+- `app/controllers/concerns/tax_year_context.rb`: the app-wide tax year (`current_tax_year`, `tax_year_options`): `?year=` → session → defaults; reset on sign-in.
+- `app/controllers/reviews_controller.rb` + `app/views/reviews/show.html.erb`: one Review page per tax year across all syncs and uploads (status tabs, category/import filters, 100-row pages).
+- `app/controllers/amazon_import_rows_controller.rb`: row Accept/Save/Skip/Restore; redirects back to the filtered Review page.
 - `app/models/amazon_sp_api.rb`: SP-API config, consent URL, LWA token exchange, Finances client.
 - `app/models/amazon_connection.rb`: one per user; refresh token encrypted with Active Record Encryption.
 - `app/models/amazon_transactions_sync.rb` + `app/jobs/amazon_transactions_sync_job.rb`: tax-year backfill via `listTransactions` (≤180-day windows, paginated, rate limited, deduped by `external_id`).
 - `app/models/amazon_transaction_normalizer.rb`: API transaction → import rows (one per leaf breakdown, plus residual row).
 - `app/models/amazon_tax_categorizer.rb`: category rules shared by the CSV importer and the API sync.
 - `app/models/amazon_settlement_importer.rb`: Amazon CSV/TSV parsing (fallback upload).
-- `app/models/amazon_import_row.rb`: tax categories, row statuses, and accepted tax totals.
-- `app/views/dashboard/index.html.erb` + `_amazon_connection.html.erb`: home dashboard and connect/sync card.
-- `app/views/amazon_import_batches/`: upload page, batch list, row review page (shows sync progress).
+- `app/models/amazon_import_row.rb`: tax categories, row statuses, review buckets (`REVIEW_STATUSES`), the auto-accept rule (`initial_status_for`), and accepted tax totals. `reviewed_at` is NULL until a person accepts or skips the row.
+- `app/models/tax_year_status.rb`: per-year facts (review counts, synced?, uploaded rows, mixed sources, latest/active sync) shared by the dashboard, Review, and outputs.
+- `app/models/pagination.rb` + `app/views/shared/_pagination.html.erb`: in-house pagination (no gem).
+- `app/models/turbo_tax_export.rb`: TXF, audit CSV, and readiness warnings; counts accepted rows only, like the tax packet.
+- `app/helpers/application_helper.rb`: `money`, `review_pill`, `sync_pill`, `nav_link`, `page_path`, `sync_year_range`.
+- `app/views/shared/`: year switcher, pagination, mixed-source warning partials; `app/views/amazon_syncs/_sync_action.html.erb` picks the next step (upload / connect / reconnect / progress / Sync YEAR).
+- `app/views/dashboard/index.html.erb` + `_amazon_connection.html.erb`: sync-first dashboard and connect/sync card.
+- `app/views/amazon_import_batches/`: Sync history (index), run details (show, refreshes while syncing), upload fallback (new); uploads can be deleted, sync runs can't.
 - `app/views/tax_packets/show.html.erb`, `app/views/turbo_tax_exports/show.html.erb`: outputs.
+- `lib/tasks/amazon_tax.rake`: `amazon:recategorize`.
 
 ## Tenancy
 
@@ -77,7 +89,7 @@ amazon_sp_api:
 - Rotate the LWA client secret every 180 days (Amazon gives a 7-day overlap); update `amazon_sp_api.lwa_client_secret`.
 - Never log tokens or OAuth codes (see `config/initializers/filter_parameter_logging.rb`).
 - Amazon refresh tokens and row `raw_data` are encrypted with Active Record Encryption.
-- Users can delete their account at `/account`, which removes their connection, batches, rows, and export inputs.
+- Users can delete their account at `/account`, which removes their connection, sync runs, uploads, rows, and export inputs.
 - Only financial data is requested (no PII roles). Disconnecting deletes the stored refresh token; sellers should also revoke the app in Seller Central → Manage Your Apps.
 - Complete Amazon's Data Protection Policy self-assessment before publishing the app.
 
@@ -93,18 +105,21 @@ amazon_sp_api:
 - Setup: `mise run setup` (bundle install + `bin/rails db:prepare`)
 - Boot + whitespace check: `mise run check`
 - Boot check: `bundle exec rails runner 'puts "rails boot ok"'`
-- Database migrations: `bin/rails db:migrate` (or `mise run migrate`)
+- Database migrations: `bin/rails db:migrate` (or `mise run migrate`); roll back with `bin/rails db:rollback:primary` (multi-database app)
+- Re-apply category rules to rows no one has reviewed: `bin/rails amazon:recategorize` (dry run; add `APPLY=1` to save, `EMAIL=...` for one seller). Run it after changing `AmazonTaxCategorizer` rules.
+- Categorizer tests: `mise exec -- ruby test/amazon_tax_categorizer_test.rb`
 - Rails console: `bin/rails console`
 - Whitespace check: `git diff --check`
 
 ## Testing Notes
 
-- There is currently no `test/` or `spec/` directory in this repository.
-- When changing code, use the Rails boot check and focused manual verification (e.g. `bin/rails runner` scripts using `ActionDispatch::Integration::Session`) unless a test suite is added.
+- `test/amazon_tax_categorizer_test.rb` is a standalone Minitest file for the category rules; there is no full Rails test suite yet.
+- When changing code, use the Rails boot check and focused manual verification (e.g. `bin/rails runner` scripts using `ActionDispatch::Integration::Session`; set `ActionController::Base.allow_forgery_protection = false` and `ActiveJob::Base.queue_adapter = :test` in the script so POSTs work and no real sync jobs run).
 - Avoid treating generated or local SQLite files under `storage/` as source changes unless the user explicitly asks for database state changes.
 
 ## Implementation Notes
 
-- Prefer the existing Rails/ERB style and shared CSS variables in the layout.
-- Keep UI changes consistent with the current bold card, table, and button styling.
-- Amazon import guidance should reflect the actual flow: connect Amazon and sync a tax year (or upload a Seller Central report as a fallback), review categories, then use the tax packet or TurboTax export.
+- Follow `DESIGN.md` for UI, IA, and copy (glossary and banned terms included); record new design decisions in its decision log.
+- Prefer the existing Rails/ERB style and shared CSS variables in the layout; no inline styles, no JS.
+- Guidance and copy should reflect the sync-first flow: connect Amazon and sync a tax year, fix the rows we couldn't categorize, add cost of goods sold, then use the tax packet or TurboTax export. Upload is only mentioned as a fallback.
+- Year-scoped pages (dashboard, Review, tax packet, TurboTax export) use `current_tax_year` and pass `year:` in links between them.

@@ -1,108 +1,160 @@
+<% year = current_tax_year %>
+<% if @active_sync %>
+  <% content_for :head do %><meta http-equiv="refresh" content="5"><% end %>
+<% end %>
+
 <div class="page-header">
   <div>
     <h1>Amazon Seller Tax Readiness</h1>
-    <p class="muted">Connect Amazon to import a tax year automatically, clean up tax categories, and generate year-end files for your CPA or TurboTax.</p>
+    <p class="muted">Connect Amazon, sync a tax year, fix anything we couldn't categorize, then hand the results to your CPA or TurboTax.</p>
   </div>
-  <div class="actions">
-    <%= link_to "Upload a file", new_amazon_import_batch_path, class: "button secondary" %>
-    <%= link_to "Open tax packet", tax_packet_path(year: @year), class: "button secondary" %>
-    <%= link_to "Open TurboTax export", turbo_tax_export_path(year: @year), class: "button secondary" %>
-  </div>
+  <% if @connection || @has_rows %>
+    <div class="actions">
+      <%= render "shared/tax_year_switcher" %>
+    </div>
+  <% end %>
 </div>
 
-<%= render "amazon_connection", connection: @amazon_connection, latest_sync: @latest_sync, sync_year_options: @sync_year_options %>
+<%= render "amazon_connection", connection: @connection, active_sync: @active_sync, year_status: @year_status %>
 
-<div class="card guide-card" style="margin-bottom:18px;">
-  <h2 style="margin-top:0;">How to use this app</h2>
-  <p class="guide-copy">
-    Work left to right: import Amazon data, review the categories this app suggests, then generate the tax packet or TurboTax export for the selected tax year.
-  </p>
-</div>
-
-<div class="grid guide-grid cards">
+<% if !@has_rows %>
   <div class="card guide-card">
-    <div class="guide-step">1</div>
-    <h3>Import Amazon data</h3>
-    <p class="guide-copy">Connect your Amazon seller account and sync a tax year, or upload a settlement CSV/TSV or 2025 transaction report from Seller Central. Each transaction is split into tax review rows.</p>
-  </div>
-  <div class="card guide-card">
-    <div class="guide-step">2</div>
-    <h3>Review the queue</h3>
-    <p class="guide-copy">Open each import and accept rows that belong in your tax summary. Change the category first when Amazon fees, FBA fees, refunds, shipping, or advertising need correction.</p>
-  </div>
-  <div class="card guide-card">
-    <div class="guide-step">3</div>
-    <h3>Finish manual inputs</h3>
-    <p class="guide-copy">Amazon files do not know what you paid for inventory. Add COGS and business details on the TurboTax export page before treating the final numbers as ready.</p>
-  </div>
-  <div class="card guide-card">
-    <div class="guide-step">4</div>
-    <h3>Export tax-ready files</h3>
-    <p class="guide-copy">Use the tax packet for CPA review, or download the TXF and audit CSV for TurboTax Desktop after rows are categorized and warnings are clear.</p>
-  </div>
-</div>
-
-<div class="grid cards">
-  <div class="card"><div class="muted">Rows needing review</div><div class="value"><%= @pending_review_count %></div></div>
-  <div class="card"><div class="muted">Uncategorized rows</div><div class="value"><%= @uncategorized_count %></div></div>
-  <div class="card"><div class="muted"><%= @year %> accepted rows</div><div class="value"><%= @accepted_count %></div></div>
-  <div class="card"><div class="muted">Excluded rows</div><div class="value"><%= @excluded_count %></div></div>
-</div>
-
-<div class="grid cards" style="margin-top:12px;">
-  <div class="card"><div class="muted"><%= @year %> gross sales</div><div class="value"><%= number_to_currency(@year_totals.fetch("gross_sales", 0) / 100.0) %></div></div>
-  <div class="card"><div class="muted"><%= @year %> fees</div><div class="value"><%= number_to_currency((@year_totals.fetch("amazon_fees", 0) + @year_totals.fetch("fba_fees", 0)) / 100.0) %></div></div>
-  <div class="card"><div class="muted"><%= @year %> refunds</div><div class="value"><%= number_to_currency(@year_totals.fetch("refunds_returns", 0) / 100.0) %></div></div>
-  <div class="card"><div class="muted">Manual COGS</div><div class="value"><%= @export_input.cost_of_goods_sold_cents.zero? ? "Missing" : number_to_currency(@export_input.cost_of_goods_sold_cents / 100.0) %></div></div>
-</div>
-
-<div class="grid dashboard-main">
-  <div class="card">
-    <h2 style="margin-top:0;">What needs attention</h2>
-    <table class="tight">
-      <tbody>
-        <tr>
-          <th scope="row">Import status</th>
-          <td>
-            <% if @latest_batch.present? %>
-              Latest import: <%= @latest_batch.filename %> from <%= l(@latest_batch.imported_at, format: :short) %>
-            <% else %>
-              No Amazon data imported yet.
-            <% end %>
-          </td>
-        </tr>
-        <tr>
-          <th scope="row">Review queue</th>
-          <td><%= @pending_review_count.zero? ? "No rows waiting for review." : "#{@pending_review_count} rows still need review." %></td>
-        </tr>
-        <tr>
-          <th scope="row">Category cleanup</th>
-          <td><%= @uncategorized_count.zero? ? "No uncategorized rows are blocking tax prep." : "#{@uncategorized_count} rows still need a tax category." %></td>
-        </tr>
-        <tr>
-          <th scope="row">COGS input</th>
-          <td><%= @export_input.cost_of_goods_sold_cents.zero? ? "Add inventory and purchase totals before final TXF export." : "Manual COGS inputs are on file for #{@year}." %></td>
-        </tr>
-      </tbody>
-    </table>
+    <h2>How it works</h2>
+    <p class="guide-copy">Most sellers only touch the few rows we can't categorize. Here's the whole process.</p>
   </div>
 
-  <div class="card">
-    <h2 style="margin-top:0;">Recent imports</h2>
-    <table class="tight">
-      <thead><tr><th>Import</th><th>Imported</th><th>Status</th></tr></thead>
-      <tbody>
-        <% @recent_batches.each do |batch| %>
+  <div class="grid guide-grid cards section">
+    <div class="card guide-card">
+      <div class="guide-step">1</div>
+      <h3>Connect Amazon</h3>
+      <p class="guide-copy">Approve read-only access to your financial transactions in Seller Central. You need a Professional selling plan, and the account's primary user has to approve it.</p>
+    </div>
+    <div class="card guide-card">
+      <div class="guide-step">2</div>
+      <h3>Sync a tax year</h3>
+      <p class="guide-copy">We pull every released transaction for the year, including sales, refunds, fees, and reimbursements, and categorize each one.</p>
+    </div>
+    <div class="card guide-card">
+      <div class="guide-step">3</div>
+      <h3>Fix what we couldn't categorize</h3>
+      <p class="guide-copy">Most rows are categorized for you. Review the ones we couldn't place, and spot-check the rest before you file.</p>
+    </div>
+    <div class="card guide-card">
+      <div class="guide-step">4</div>
+      <h3>Add COGS and export</h3>
+      <p class="guide-copy">Amazon doesn't know what you paid for inventory. Add your cost of goods sold, then download the tax packet or the TurboTax file.</p>
+    </div>
+  </div>
+<% else %>
+  <%= render "shared/mixed_source_warning", year_status: @year_status %>
+
+  <% if @year_status.rows? %>
+    <% review_counts = @year_status.review_counts %>
+    <div class="grid cards">
+      <div class="card"><div class="muted"><%= year %> needs review</div><div class="value"><%= number_with_delimiter(@year_status.needs_review_count) %></div></div>
+      <div class="card"><div class="muted"><%= year %> counted rows</div><div class="value"><%= number_with_delimiter(@year_status.counted_rows_count) %></div></div>
+      <div class="card"><div class="muted"><%= year %> not on Schedule C</div><div class="value"><%= number_with_delimiter(@excluded_count) %></div></div>
+      <div class="card"><div class="muted"><%= year %> skipped rows</div><div class="value"><%= number_with_delimiter(review_counts.fetch("skipped")) %></div></div>
+    </div>
+
+    <div class="grid cards section">
+      <div class="card"><div class="muted"><%= year %> gross sales</div><div class="value"><%= money(@totals.fetch("gross_sales", 0)) %></div></div>
+      <div class="card"><div class="muted"><%= year %> Amazon &amp; FBA fees</div><div class="value"><%= money(@totals.fetch("amazon_fees", 0) + @totals.fetch("fba_fees", 0)) %></div></div>
+      <div class="card"><div class="muted"><%= year %> refunds</div><div class="value"><%= money(@totals.fetch("refunds_returns", 0)) %></div></div>
+      <div class="card"><div class="muted"><%= year %> cost of goods sold</div><div class="value"><%= @export_input.cost_of_goods_sold_cents.zero? ? "Missing" : money(@export_input.cost_of_goods_sold_cents) %></div></div>
+    </div>
+  <% else %>
+    <div class="card empty-state">
+      <h2>No <%= year %> transactions yet</h2>
+      <p class="guide-copy">
+        Sync <%= year %> to see its totals here.
+        <% if @years_with_rows.any? %>
+          Or switch to a year you already have: <%= safe_join(@years_with_rows.map { |other_year| link_to(other_year, root_path(year: other_year)) }, ", ") %>.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+
+  <div class="grid dashboard-main">
+    <div class="card">
+      <h2>What needs attention</h2>
+      <table class="tight">
+        <tbody>
           <tr>
-            <td><%= link_to batch.filename, amazon_import_batch_path(batch) %></td>
-            <td><%= l(batch.imported_at, format: :short) %></td>
-            <td><%= batch.status.humanize %></td>
+            <th scope="row">Amazon sync</th>
+            <% latest_sync = @year_status.latest_sync %>
+            <% if @year_status.active_sync %>
+              <td><span class="pill warn">Syncing</span></td>
+              <td>Pulling in <%= year %> from Amazon now.</td>
+            <% elsif latest_sync&.sync_failed? %>
+              <td><span class="pill bad">Failed</span></td>
+              <td>The last <%= year %> sync stopped early. <%= link_to "See what happened", amazon_import_batch_path(latest_sync) %></td>
+            <% elsif @year_status.synced? %>
+              <td><span class="pill good">Done</span></td>
+              <td><%= latest_sync&.finished_at ? "Synced #{l(latest_sync.finished_at, format: :short)}." : "#{year} is synced from Amazon." %></td>
+            <% elsif @year_status.rows? %>
+              <td><span class="pill">Upload</span></td>
+              <td>This year comes from an uploaded report. Syncing from Amazon would replace it.</td>
+            <% else %>
+              <td><span class="pill warn">To do</span></td>
+              <td>Sync <%= year %> from Amazon.</td>
+            <% end %>
           </tr>
-        <% end %>
-        <% if @recent_batches.empty? %>
-          <tr><td colspan="3">No imports yet.</td></tr>
-        <% end %>
-      </tbody>
-    </table>
+          <tr>
+            <th scope="row">Review</th>
+            <% if @year_status.needs_review_count.positive? %>
+              <td><span class="pill warn">To do</span></td>
+              <td><%= pluralize(number_with_delimiter(@year_status.needs_review_count), "row") %> need<%= "s" if @year_status.needs_review_count == 1 %> a category. <%= link_to "Review them", review_path(year: year) %></td>
+            <% elsif @year_status.rows? %>
+              <td><span class="pill good">Done</span></td>
+              <td>Nothing waiting. <%= link_to "Spot-check auto-categorized rows", review_path(year: year, status: "auto_accepted") %></td>
+            <% else %>
+              <td><span class="pill">Waiting</span></td>
+              <td>Rows we can't categorize show up here after you sync.</td>
+            <% end %>
+          </tr>
+          <tr>
+            <th scope="row">Cost of goods sold</th>
+            <% if !@export_input.cost_of_goods_sold_cents.zero? %>
+              <td><span class="pill good">Done</span></td>
+              <td><%= money(@export_input.cost_of_goods_sold_cents) %> on file for <%= year %>.</td>
+            <% else %>
+              <td><span class="pill warn">To do</span></td>
+              <td>Amazon doesn't know what you paid for inventory. <%= link_to "Add it on the TurboTax export page", turbo_tax_export_path(year: year) %></td>
+            <% end %>
+          </tr>
+          <tr>
+            <th scope="row">Export</th>
+            <% if @year_status.rows? && @year_status.needs_review_count.zero? && !@export_input.cost_of_goods_sold_cents.zero? %>
+              <td><span class="pill good">Ready</span></td>
+              <td><%= link_to "Tax packet", tax_packet_path(year: year) %> · <%= link_to "TurboTax export", turbo_tax_export_path(year: year) %></td>
+            <% else %>
+              <td><span class="pill">Not yet</span></td>
+              <td>Finish the steps above, then open the <%= link_to "tax packet", tax_packet_path(year: year) %> or <%= link_to "TurboTax export", turbo_tax_export_path(year: year) %>.</td>
+            <% end %>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Recent syncs</h2>
+      <table class="tight">
+        <thead><tr><th scope="col">Sync</th><th scope="col">Started</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          <% @recent_batches.each do |batch| %>
+            <tr>
+              <td><%= link_to batch.display_name, amazon_import_batch_path(batch) %></td>
+              <td><%= l(batch.created_at, format: :short) %></td>
+              <td><%= sync_pill(batch) %></td>
+            </tr>
+          <% end %>
+          <% if @recent_batches.empty? %>
+            <tr><td colspan="3">No syncs yet.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="note"><%= link_to "See all in Sync history", amazon_import_batches_path %></p>
+    </div>
   </div>
-</div>
+<% end %>

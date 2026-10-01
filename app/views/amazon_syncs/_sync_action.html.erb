@@ -1,0 +1,16 @@
+<%# locals: (year:) -%>
+<%# The single next step for getting a year's data in, in sync-first order. -%>
+<% connection = Current.user.amazon_connection %>
+<% if !AmazonSpApi.configured? %>
+  <%= link_to "Upload a report", new_amazon_import_batch_path, class: "button" %>
+<% elsif connection.nil? %>
+  <%= link_to "Connect Amazon", new_amazon_connection_path, class: "button" %>
+<% elsif !connection.active? %>
+  <%= link_to "Reconnect Amazon", new_amazon_connection_path, class: "button" %>
+<% elsif (active_sync = connection.active_sync_batch) %>
+  <%= link_to "View sync progress", amazon_import_batch_path(active_sync), class: "button secondary" %>
+<% elsif AmazonTransactionsSync.selectable_tax_years.include?(year) %>
+  <%= button_to "Sync #{year}", amazon_syncs_path, params: { tax_year: year }, class: "button" %>
+<% else %>
+  <p class="note">Amazon sync covers <%= sync_year_range %>. Switch to one of those years to sync it.</p>
+<% end %>

@@ -1,52 +1,70 @@
 <div class="page-header">
   <div>
-    <h1>Amazon Tax Packet</h1>
-    <p class="muted">Tax prep summary from accepted Amazon settlement rows. Review with a tax professional before filing.</p>
+    <h1>Tax Packet <%= @year %></h1>
+    <p class="muted">Your <%= @year %> totals from every row that counts: auto-categorized and accepted. Review with a tax professional before filing.</p>
   </div>
-  <%= link_to "Amazon imports", amazon_import_batches_path, class: "button secondary" %>
+  <div class="actions">
+    <%= render "shared/tax_year_switcher" %>
+    <%= link_to "Review", review_path(year: @year), class: "button secondary" %>
+    <%= link_to "TurboTax export", turbo_tax_export_path(year: @year), class: "button secondary" %>
+  </div>
 </div>
 
-<div class="card">
-  <%= form_with url: tax_packet_path, method: :get, local: true, class: "inline-form" do |form| %>
-    <%= form.label :year, "Tax year" %>
-    <%= form.number_field :year, value: @year, min: 2000, max: Date.current.year + 1 %>
-    <%= form.submit "Update", class: "button small" %>
-  <% end %>
-</div>
+<% if !@year_status.rows? %>
+  <div class="card empty-state">
+    <h2>No <%= @year %> transactions yet</h2>
+    <p class="guide-copy">Your tax packet fills in once you sync <%= @year %> from Amazon.</p>
+    <div class="actions">
+      <%= render "amazon_syncs/sync_action", year: @year %>
+    </div>
+  </div>
+<% else %>
+  <%= render "shared/mixed_source_warning", year_status: @year_status %>
 
-<div class="grid cards" style="margin-top:12px;">
-  <% AmazonImportRow::TAX_CATEGORIES.each do |category, label| %>
-    <% next if category == "uncategorized" && @totals.fetch(category, 0).zero? %>
-    <div class="card">
-      <div class="muted"><%= label %></div>
-      <div class="value"><%= number_to_currency(@totals.fetch(category, 0) / 100.0) %></div>
+  <% if @year_status.needs_review_count.positive? %>
+    <div class="callout warn">
+      <p>Not included yet: <%= pluralize(number_with_delimiter(@year_status.needs_review_count), "row") %> that need<%= "s" if @year_status.needs_review_count == 1 %> a category. <%= link_to "Review them", review_path(year: @year) %></p>
     </div>
   <% end %>
-</div>
 
-<div class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Audit Trail</h2>
-  <table class="tight">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Category</th>
-        <th>Description</th>
-        <th>Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @accepted_rows.each do |row| %>
-        <tr>
-          <td><%= row.posted_on || "Unknown" %></td>
-          <td><%= row.tax_category_name %></td>
-          <td><%= row.description.presence || row.order_id || "Amazon settlement row" %></td>
-          <td><%= number_to_currency(row.tax_amount_cents / 100.0) %></td>
-        </tr>
-      <% end %>
-      <% if @accepted_rows.empty? %>
-        <tr><td colspan="4">No accepted Amazon settlement rows for <%= @year %>.</td></tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+  <div class="grid cards">
+    <% AmazonImportRow::TAX_CATEGORIES.each do |category, label| %>
+      <% next if category == "uncategorized" && @totals.fetch(category, 0).zero? %>
+      <div class="card">
+        <div class="muted"><%= label %></div>
+        <div class="value"><%= money(@totals.fetch(category, 0)) %></div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="card section">
+    <h2>Audit trail</h2>
+    <% if @pagination.total_count.zero? %>
+      <p class="guide-copy">No <%= @year %> rows count yet. <%= link_to "Review #{@year}", review_path(year: @year) %></p>
+    <% else %>
+      <table class="tight">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Category</th>
+            <th scope="col">Description</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pagination.records.each do |row| %>
+            <tr>
+              <td><%= row.posted_on %></td>
+              <td><%= row.tax_category_name %></td>
+              <td><%= row.description.presence || row.order_id || "Amazon transaction" %></td>
+              <td><%= money(row.tax_amount_cents) %></td>
+              <td><%= review_pill(row.review_status) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <%= render "shared/pagination", pagination: @pagination %>
+    <% end %>
+  </div>
+<% end %>

@@ -38,8 +38,17 @@ class TurboTaxExport
     @input = input
   end
 
+  # Same rows as the tax packet: accepted only. Rows still waiting for review are reported in #warnings.
   def rows
-    @rows ||= input.user.amazon_import_rows.turbotax_ready_for_year(year)
+    @rows ||= input.user.amazon_import_rows.accepted.for_year(year)
+  end
+
+  def needs_review_count
+    @needs_review_count ||= input.user.amazon_import_rows.needs_review.for_year(year).count
+  end
+
+  def year_status
+    @year_status ||= TaxYearStatus.new(input.user, year)
   end
 
   def lines
@@ -71,9 +80,11 @@ class TurboTaxExport
 
   def warnings
     messages = []
-    messages << "#{uncategorized_rows.count} uncategorized Amazon rows are excluded from the TXF." if uncategorized_rows.any?
-    messages << "#{excluded_rows.count} non-tax rows are excluded from Schedule C lines." if excluded_rows.any?
-    messages << "Manual COGS inputs are all zero. Add inventory/purchase totals if this seller had product costs." if input.cost_of_goods_sold_cents.zero?
+    messages << "Not included yet: #{count_rows(needs_review_count)} that need review." if needs_review_count.positive?
+    messages << "Possible double counting: #{year} has both synced and uploaded rows." if year_status.mixed_sources?
+    messages << "Left out of the TXF: #{count_rows(uncategorized_rows.count)} accepted as Uncategorized." if uncategorized_rows.any?
+    messages << "Left out of Schedule C lines: #{count_rows(excluded_rows.count)} of transfers, withheld tax, or reserves." if excluded_rows.any?
+    messages << "Cost of goods sold is $0. Add inventory and purchase totals if you had product costs." if input.cost_of_goods_sold_cents.zero?
     messages
   end
 
@@ -102,9 +113,9 @@ class TurboTaxExport
 
   def audit_csv
     CSV.generate(headers: true) do |csv|
-      csv << ["posted_on", "category", "amount", "schedule_c_line", "description", "source_row_number"]
+      csv << ["posted_on", "category", "amount", "schedule_c_line", "description", "source_row_number", "review_status", "source"]
 
-      rows.order(:posted_on, :source_row_number).each do |row|
+      rows.includes(:amazon_import_batch).order(:posted_on, :source_row_number).each do |row|
         line_key = CATEGORY_LINES[row.tax_category]
         csv << [
           row.posted_on,
@@ -112,7 +123,9 @@ class TurboTaxExport
           format_amount(row.amount_cents),
           line_key ? label_for(line_key) : "Excluded from TXF",
           row.description,
-          row.source_row_number
+          row.source_row_number,
+          row.review_label,
+          row.amazon_import_batch.source_label
         ]
       end
     end
@@ -137,6 +150,10 @@ class TurboTaxExport
   end
 
   private
+
+  def count_rows(count)
+    "#{count} #{count == 1 ? "row" : "rows"}"
+  end
 
   def taxable_rows
     rows.reject { |row| EXCLUDED_CATEGORIES.include?(row.tax_category) || !CATEGORY_LINES.key?(row.tax_category) }

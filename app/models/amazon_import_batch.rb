@@ -1,4 +1,6 @@
 class AmazonImportBatch < ApplicationRecord
+  SYNC_STATUS_LABELS = { "queued" => "Queued", "running" => "Syncing", "succeeded" => "Finished", "failed" => "Failed" }.freeze
+
   belongs_to :user
   belongs_to :amazon_connection, optional: true
   has_many :amazon_import_rows, dependent: :destroy
@@ -16,7 +18,7 @@ class AmazonImportBatch < ApplicationRecord
       source: :sp_api,
       sync_status: :queued,
       tax_year: tax_year,
-      filename: "Amazon SP-API sync — #{tax_year}",
+      filename: "Amazon sync · #{tax_year}",
       imported_at: Time.current
     )
     AmazonTransactionsSyncJob.perform_later(batch)
@@ -27,8 +29,22 @@ class AmazonImportBatch < ApplicationRecord
     sync_queued? || sync_running?
   end
 
+  # Older sync runs were stored as "Amazon SP-API sync — YEAR"; derive the name instead of trusting filename.
+  def display_name
+    source_sp_api? ? "Amazon sync · #{tax_year}" : filename
+  end
+
   def source_label
-    source_sp_api? ? "Amazon auto-import" : "File upload"
+    source_sp_api? ? "Amazon sync" : "Upload"
+  end
+
+  def sync_status_label
+    SYNC_STATUS_LABELS.fetch(sync_status.to_s, "Uploaded")
+  end
+
+  # Batches don't need a separate sign-off: they're ready once no row is waiting for a category.
+  def status_label
+    imported? ? "Needs review" : "Ready"
   end
 
   def refresh_status!

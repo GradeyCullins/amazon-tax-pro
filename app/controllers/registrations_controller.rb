@@ -12,7 +12,7 @@ class RegistrationsController < ApplicationController
 
     if @user.save
       start_new_session_for @user
-      redirect_to after_authentication_url, notice: "Welcome! Connect your Amazon seller account to import transactions."
+      redirect_to after_authentication_url, notice: "Welcome! Next, connect your Amazon seller account."
     else
       flash.now[:alert] = @user.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity

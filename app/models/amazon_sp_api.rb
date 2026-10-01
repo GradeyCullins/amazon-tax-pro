@@ -83,6 +83,6 @@ module AmazonSpApi
   end
 
   def ensure_configured!
-    raise NotConfigured, "Amazon SP-API credentials are not configured." unless configured?
+    raise NotConfigured, "The Amazon connection isn't available right now." unless configured?
   end
 end

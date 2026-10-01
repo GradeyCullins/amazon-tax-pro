@@ -1,61 +1,44 @@
 <div class="page-header">
   <div>
-    <h1>Import Amazon Data</h1>
-    <p class="muted">Fallback for manual imports: upload an Amazon settlement or 2025 transaction report CSV/TSV exported from Seller Central. Connected sellers can sync a tax year from the dashboard instead.</p>
+    <h1>Upload a Seller Central report</h1>
+    <p class="muted">The fallback for sellers who can't connect Amazon. Uploaded rows are categorized the same way as synced ones.</p>
   </div>
-  <%= link_to "All imports", amazon_import_batches_path, class: "button secondary" %>
+  <div class="actions">
+    <%= link_to "Sync history", amazon_import_batches_path, class: "button secondary" %>
+  </div>
 </div>
+
+<% if AmazonSpApi.configured? %>
+  <div class="callout warn">
+    <p><strong>Most sellers should connect Amazon instead.</strong> Syncing pulls in a full tax year for you, with no reports to find or download.</p>
+    <div class="actions">
+      <%= render "amazon_syncs/sync_action", year: current_tax_year %>
+    </div>
+  </div>
+<% end %>
 
 <div class="grid dashboard-main">
   <div class="card">
-    <h2 style="margin-top:0;">Upload your Amazon file</h2>
-    <p class="guide-copy" style="margin-bottom:14px;">
-      Use the settlement or transaction report for the tax year you are preparing. CSV, TSV, and TXT exports are accepted.
-    </p>
-    <%= form_with url: amazon_import_batches_path, local: true, multipart: true do |form| %>
+    <h2>Upload your report</h2>
+    <p class="guide-copy">Use a settlement report or the 2025 transaction report from Seller Central. CSV, TSV, and TXT files work. Keep the original column headers.</p>
+    <%= form_with url: amazon_import_batches_path, multipart: true, class: "section" do |form| %>
       <div class="form-row">
-        <%= form.label :file, "Amazon CSV or TSV" %>
+        <%= form.label :file, "Seller Central report" %>
         <%= form.file_field :file, accept: ".csv,.tsv,.txt,text/csv,text/tab-separated-values" %>
       </div>
-      <%= form.submit "Import for review", class: "button" %>
+      <%= form.submit "Upload report", class: "button" %>
+    <% end %>
+    <% if @synced_years.any? %>
+      <p class="note">Rows from <%= @synced_years.sort.to_sentence %> are skipped because you've synced <%= @synced_years.one? ? "that year" : "those years" %> from Amazon. Synced data replaces uploads so nothing is counted twice.</p>
     <% end %>
   </div>
 
   <div class="card guide-card">
-    <h2 style="margin-top:0;">Before you upload</h2>
+    <h2>When to upload</h2>
     <ul class="guide-list">
-      <li>Export the report from Amazon Seller Central for the full tax year or for the settlement period you want to add.</li>
-      <li>Keep the original column headers in the file. The importer looks for Amazon date and amount columns to identify the format.</li>
-      <li>Import one report at a time, then review it before relying on year-end totals.</li>
+      <li>Your account is on the Individual selling plan. Amazon only lets Professional sellers connect apps.</li>
+      <li>You aren't the account's primary user, and the primary user can't connect it for you.</li>
+      <li>Connecting Amazon isn't available right now.</li>
     </ul>
-  </div>
-</div>
-
-<div class="callout">
-  <p>
-    Amazon files include sales, refunds, fees, withheld marketplace tax, transfers, and adjustments. This app suggests tax categories, but you decide what should be accepted, skipped, or corrected for your business.
-  </p>
-</div>
-
-<div class="grid guide-grid cards">
-  <div class="card guide-card">
-    <div class="guide-step">1</div>
-    <h3>Upload the report</h3>
-    <p class="guide-copy">Choose a Seller Central CSV, TSV, or TXT file. The importer detects the separator and finds the Amazon header row.</p>
-  </div>
-  <div class="card guide-card">
-    <div class="guide-step">2</div>
-    <h3>Rows are normalized</h3>
-    <p class="guide-copy">Settlement rows become review items with dates, descriptions, amounts, and suggested categories like gross sales, refunds, Amazon fees, FBA fees, shipping, or advertising.</p>
-  </div>
-  <div class="card guide-card">
-    <div class="guide-step">3</div>
-    <h3>Review every pending row</h3>
-    <p class="guide-copy">Accept rows that belong in your tax summaries. Change the category first when needed, or skip rows that should not affect your Schedule C totals.</p>
-  </div>
-  <div class="card guide-card">
-    <div class="guide-step">4</div>
-    <h3>Use the results</h3>
-    <p class="guide-copy">Reviewed imports feed the tax packet and TurboTax export. Add manual COGS inputs separately before final export.</p>
   </div>
 </div>

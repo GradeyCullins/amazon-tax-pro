@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_060200) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_064847) do
   create_table "accounts", force: :cascade do |t|
     t.integer "balance_cents", default: 0, null: false
     t.datetime "created_at", null: false
@@ -68,6 +68,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_060200) do
     t.string "order_id"
     t.date "posted_on"
     t.text "raw_data"
+    t.datetime "reviewed_at"
     t.string "settlement_id"
     t.integer "source_row_number", null: false
     t.integer "status", default: 0, null: false
@@ -80,6 +81,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_060200) do
     t.index ["expense_id"], name: "index_amazon_import_rows_on_expense_id"
     t.index ["transaction_id"], name: "index_amazon_import_rows_on_transaction_id"
     t.index ["user_id", "external_id"], name: "index_amazon_import_rows_on_user_id_and_external_id", unique: true
+    t.index ["user_id", "posted_on"], name: "index_amazon_import_rows_on_user_id_and_posted_on"
     t.index ["user_id"], name: "index_amazon_import_rows_on_user_id"
   end
 

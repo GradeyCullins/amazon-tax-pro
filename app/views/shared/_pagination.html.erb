@@ -1,0 +1,17 @@
+<%# locals: (pagination:) -%>
+<% if pagination.total_count.positive? %>
+  <nav class="pagination" aria-label="Pages">
+    <span class="note">Showing <%= number_with_delimiter(pagination.first_item) %>–<%= number_with_delimiter(pagination.last_item) %> of <%= number_with_delimiter(pagination.total_count) %></span>
+    <% if pagination.total_pages > 1 %>
+      <div class="actions">
+        <% if pagination.previous_page %>
+          <%= link_to "Previous", page_path(pagination.previous_page), class: "button small secondary", rel: "prev" %>
+        <% end %>
+        <span class="pill">Page <%= pagination.page %> of <%= pagination.total_pages %></span>
+        <% if pagination.next_page %>
+          <%= link_to "Next", page_path(pagination.next_page), class: "button small secondary", rel: "next" %>
+        <% end %>
+      </div>
+    <% end %>
+  </nav>
+<% end %>

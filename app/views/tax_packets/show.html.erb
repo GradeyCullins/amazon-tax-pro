@@ -1,4 +1,4 @@
-<div class="page-header">
+<div class="page-header tax-packet-header">
   <div>
     <h1>Tax Packet <%= @year %></h1>
     <p class="muted">Your <%= @year %> totals from every row that counts: auto-categorized and accepted. Review with a tax professional before filing.</p>
@@ -21,48 +21,94 @@
 <% else %>
   <%= render "shared/mixed_source_warning", year_status: @year_status %>
 
-  <% if @year_status.needs_review_count.positive? %>
-    <div class="callout warn">
-      <p>Not included yet: <%= pluralize(number_with_delimiter(@year_status.needs_review_count), "row") %> that need<%= "s" if @year_status.needs_review_count == 1 %> a category. <%= link_to "Review them", review_path(year: @year) %></p>
+  <% if @year_status.needs_review_count.positive? || @year_status.sandbox_sample? %>
+    <div class="tax-packet-notices">
+      <% if @year_status.needs_review_count.positive? %>
+        <div class="callout warn">
+          <p><strong><%= number_with_delimiter(@year_status.needs_review_count) %> <%= "row".pluralize(@year_status.needs_review_count) %> need review.</strong> Not included in these totals. <%= link_to "Review them", review_path(year: @year) %></p>
+        </div>
+      <% end %>
+      <% if @year_status.sandbox_sample? %>
+        <div class="callout"><p><strong>Sample data.</strong> These totals are for testing only.</p></div>
+      <% end %>
     </div>
   <% end %>
 
-  <% if @year_status.sandbox_sample? %>
-    <div class="callout"><p>These totals include Amazon sandbox sample transactions. They're for testing only.</p></div>
-  <% end %>
-
-  <div class="grid cards tax-packet-cards">
+  <div class="grid tax-packet-summary">
     <div class="card">
-      <div class="muted">Gross receipts (sales + shipping credits)</div>
+      <div class="muted">Gross receipts</div>
       <div class="value"><%= money(@activity.gross_receipts_cents) %></div>
+      <p class="note">Product sales + buyer-paid shipping · Schedule C gross receipts</p>
     </div>
     <div class="card">
-      <div class="muted">After-fee revenue</div>
+      <div class="muted">Revenue</div>
       <div class="value"><%= money(@activity.revenue_cents) %></div>
+      <p class="note">After refunds, fees, ads, and shipping charges · planning only</p>
     </div>
-    <% AmazonImportRow::TAX_CATEGORIES.each do |category, label| %>
-      <% next if category == "uncategorized" %>
-      <% amount_cents = category == "cost_of_goods_sold" ? @cogs_input.cost_of_goods_sold_cents : @activity.total_cents(category) %>
-      <div class="card">
-        <div class="muted"><%= { "shipping" => "Shipping (net)", "cost_of_goods_sold" => "Cost of goods sold (you enter)" }.fetch(category, label) %></div>
-        <div class="value"><%= money(amount_cents) %></div>
-      </div>
+  </div>
+
+  <div class="grid tax-packet-groups">
+    <% TaxPacketsController::FIGURE_GROUPS.each do |heading, categories| %>
+      <section class="card tax-packet-group" aria-label="<%= heading %>">
+        <h2><%= heading %></h2>
+        <% if heading == "Other activity" %>
+          <p class="note">Counted in the audit trail; not on Schedule C.</p>
+        <% end %>
+        <dl class="tax-packet-figures">
+          <% categories.each do |category| %>
+            <% amount_cents = case category
+                 when "shipping_credits" then @activity.shipping_credits_cents
+                 when "shipping_charges" then @activity.shipping_charges_cents
+                 when "cost_of_goods_sold" then @cogs_input.cost_of_goods_sold_cents
+                 else @activity.total_cents(category)
+                 end %>
+            <dt><%= { "shipping_credits" => "Buyer-paid shipping", "shipping_charges" => "Shipping charges", "cost_of_goods_sold" => "Cost of goods sold (you enter)" }.fetch(category) { AmazonImportRow::TAX_CATEGORIES.fetch(category) } %></dt>
+            <dd><%= money(amount_cents) %></dd>
+          <% end %>
+        </dl>
+      </section>
     <% end %>
   </div>
 
-  <p class="note">
-    Expenses and withheld tax show as positive totals, and credits are netted against their category (a refunded fee lowers fees).
-    After-fee revenue is gross receipts minus refunds, Amazon and FBA fees, advertising, and shipping charges. It's a planning
-    figure; Schedule C reports gross receipts and each expense separately. Cost of goods sold comes from your
-    <%= link_to "TurboTax export inputs", turbo_tax_export_path(year: @year) %>.
-  </p>
+  <details class="tax-packet-method">
+    <summary>How these totals are calculated</summary>
+    <p class="note">
+      Gross receipts add product sales and buyer-paid shipping. Revenue subtracts refunds, Amazon and FBA fees,
+      advertising, and shipping charges from gross receipts. This planning subtotal excludes reimbursements, cost
+      of goods sold, and other business expenses, so it is not profit or a Schedule C line. Credits reduce their
+      category totals; the audit trail keeps each row's signed amount. In TurboTax, FBA fees, shipping charges,
+      and the other business expenses category combine on one expense line. Cost of goods sold comes from your
+      <%= link_to "TurboTax export inputs", turbo_tax_export_path(year: @year) %>.
+    </p>
+  </details>
 
   <div class="card section">
-    <h2>Audit trail</h2>
+    <h2 id="audit-trail">Audit trail</h2>
+    <p class="note">Accepted transaction rows behind these totals. Cost of goods sold is entered separately.</p>
+    <%= form_with url: tax_packet_path, method: :get, class: "tax-packet-filter" do |form| %>
+      <%= hidden_field_tag :year, @year, id: nil %>
+      <div>
+        <%= form.label :category, "Category", for: "tax_packet_category" %>
+        <%= form.select :category, AmazonImportRow.category_options.reject { |_, key| key == "uncategorized" }, { include_blank: "All categories", selected: @category }, id: "tax_packet_category" %>
+      </div>
+      <div class="actions">
+        <%= form.submit "Filter", name: nil, class: "button small" %>
+        <% if @category %>
+          <%= link_to "Clear", tax_packet_path(year: @year), class: "button small secondary" %>
+        <% end %>
+      </div>
+    <% end %>
     <% if @pagination.total_count.zero? %>
-      <p class="guide-copy">No <%= @year %> rows count yet. <%= link_to "Review #{@year}", review_path(year: @year) %></p>
+      <% if @category == "cost_of_goods_sold" %>
+        <p class="guide-copy">Cost of goods sold comes from your <%= link_to "TurboTax export inputs", turbo_tax_export_path(year: @year) %>, so there are no Amazon rows for it here.</p>
+      <% elsif @category %>
+        <p class="guide-copy">No counted Amazon rows in this category.</p>
+      <% else %>
+        <p class="guide-copy">No <%= @year %> rows count yet. <%= link_to "Review #{@year}", review_path(year: @year) %></p>
+      <% end %>
     <% else %>
-      <table class="tight">
+      <p class="tax-packet-result-count">Showing <%= number_with_delimiter(@pagination.first_item) %>–<%= number_with_delimiter(@pagination.last_item) %> of <%= number_with_delimiter(@pagination.total_count) %> counted <%= "row".pluralize(@pagination.total_count) %></p>
+      <table class="tight tax-packet-audit">
         <thead>
           <tr>
             <th scope="col">Date</th>
@@ -77,7 +123,26 @@
             <tr>
               <td><%= row.posted_on %></td>
               <td><%= row.tax_category_name %></td>
-              <td><%= row.description.presence || row.order_id || "Amazon transaction" %></td>
+              <td>
+                <strong><%= row.plain_label %></strong>
+                <details class="row-details">
+                  <summary>Amazon details</summary>
+                  <dl>
+                    <% if row.order_id.present? %>
+                      <dt>Order</dt>
+                      <dd><%= row.order_id %> · <%= link_to "Review order rows", review_path(year: @year, status: "all", q: row.order_id.strip) %></dd>
+                    <% end %>
+                    <% { "Description" => row.description, "Transaction type" => row.transaction_type, "Amount type" => row.amount_type, "Amount detail" => row.amount_description }.each do |term, value| %>
+                      <% if value.present? %>
+                        <dt><%= term %></dt>
+                        <dd><%= value %></dd>
+                      <% end %>
+                    <% end %>
+                    <dt>Source</dt>
+                    <dd><%= link_to "#{row.amazon_import_batch.display_name}, row #{number_with_delimiter(row.source_row_number)}", amazon_import_batch_path(row.amazon_import_batch) %></dd>
+                  </dl>
+                </details>
+              </td>
               <td><%= money(row.amount_cents) %></td>
               <td><%= review_pill(row.review_status) %></td>
             </tr>

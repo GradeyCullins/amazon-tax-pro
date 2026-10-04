@@ -32,6 +32,8 @@ class AmazonYearActivityTest < Minitest::Test
       assert_equal 650, activity.total_cents("amazon_fees")
       assert_equal 80, activity.total_cents("marketplace_withheld_tax")
       assert_equal 300, activity.total_cents("shipping")
+      assert_equal 500, activity.shipping_credits_cents
+      assert_equal 200, activity.shipping_charges_cents
       assert_equal 10_500, activity.gross_receipts_cents
       assert_equal 8_150, activity.revenue_cents
       assert_equal 20_000, AmazonYearActivity.new(user: user, year: 2026).total_cents("gross_sales")

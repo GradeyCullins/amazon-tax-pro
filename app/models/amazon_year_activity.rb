@@ -30,12 +30,20 @@ class AmazonYearActivity
 
   # Schedule C line 1: sales plus shipping credits paid by buyers.
   def gross_receipts_cents
-    totals.fetch("gross_sales", 0) + shipping_cents.fetch(:credits)
+    totals.fetch("gross_sales", 0) + shipping_credits_cents
   end
 
   # Planning subtotal, not a Schedule C line: gross receipts minus refunds, selling fees, ads, and shipping charges.
   def revenue_cents
-    gross_receipts_cents + totals.values_at(*SELLING_COST_CATEGORIES).compact.sum + shipping_cents.fetch(:charges)
+    gross_receipts_cents + totals.values_at(*SELLING_COST_CATEGORIES).compact.sum - shipping_charges_cents
+  end
+
+  def shipping_credits_cents
+    shipping_cents.fetch(:credits)
+  end
+
+  def shipping_charges_cents
+    -shipping_cents.fetch(:charges)
   end
 
   private

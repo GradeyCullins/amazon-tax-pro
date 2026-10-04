@@ -45,6 +45,8 @@ module AmazonTaxCategorizer
     return "reserves_adjustments" if type.match?(/reserve/i) || text.match?(/reserve/i)
     # Sales tax and regulatory fees Amazon remits as marketplace facilitator net to zero and are excluded from income.
     return "marketplace_withheld_tax" if text.match?(/MarketplaceFacilitator|MPFRegulatoryFee|Withheld|Tax(?!able)/i)
+    # The debit that offsets buyer-paid shipping is a shipping cost, even though Amazon nests it under AmazonFees.
+    return "shipping" if type == "Shipment" && path.last.to_s.match?(/\AShippingChargeback\z/i)
     return "advertising" if type.match?(/advertis|sponsored|ProductAds/i) || text.match?(/advertis|sponsored/i)
     return "reimbursements" if type.match?(/reimburse|SAFE-?T|Guarantee/i) || text.match?(/reimburse/i)
     return "fba_fees" if text.match?(/\bFBA|Fulfillment|Storage|Removal|Disposal|Inbound|Placement|PickPack/i)

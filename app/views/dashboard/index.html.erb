@@ -50,18 +50,35 @@
 
   <% if @year_status.rows? %>
     <% review_counts = @year_status.review_counts %>
-    <div class="grid cards">
-      <div class="card"><div class="muted"><%= year %> needs review</div><div class="value"><%= number_with_delimiter(@year_status.needs_review_count) %></div></div>
-      <div class="card"><div class="muted"><%= year %> counted rows</div><div class="value"><%= number_with_delimiter(@year_status.counted_rows_count) %></div></div>
-      <div class="card"><div class="muted"><%= year %> not on Schedule C</div><div class="value"><%= number_with_delimiter(@excluded_count) %></div></div>
-      <div class="card"><div class="muted"><%= year %> skipped rows</div><div class="value"><%= number_with_delimiter(review_counts.fetch("skipped")) %></div></div>
-    </div>
+    <div class="grid dashboard-overview">
+      <div class="card">
+        <h2><%= year %> revenue</h2>
+        <div class="revenue-layout">
+          <div>
+            <div class="value revenue-value"><%= money(@activity.revenue_cents) %></div>
+            <p class="note">A planning figure from counted rows, before inventory and other costs. This is not a Schedule C line.</p>
+          </div>
+          <dl class="revenue-breakdown">
+            <dt>Gross sales</dt><dd><%= money(@activity.total_cents("gross_sales")) %></dd>
+            <dt>Buyer-paid shipping</dt><dd><%= money(@activity.shipping_credits_cents) %></dd>
+            <dt>Refunds</dt><dd><%= money(-@activity.total_cents("refunds_returns")) %></dd>
+            <dt>Amazon &amp; FBA fees</dt><dd><%= money(-(@activity.total_cents("amazon_fees") + @activity.total_cents("fba_fees"))) %></dd>
+            <dt>Advertising</dt><dd><%= money(-@activity.total_cents("advertising")) %></dd>
+            <dt>Shipping charges</dt><dd><%= money(-@activity.shipping_charges_cents) %></dd>
+          </dl>
+        </div>
+      </div>
 
-    <div class="grid cards section">
-      <div class="card"><div class="muted"><%= year %> gross sales</div><div class="value"><%= money(@activity.total_cents("gross_sales")) %></div></div>
-      <div class="card"><div class="muted"><%= year %> Amazon &amp; FBA fees</div><div class="value"><%= money(@activity.total_cents("amazon_fees") + @activity.total_cents("fba_fees")) %></div></div>
-      <div class="card"><div class="muted"><%= year %> refunds</div><div class="value"><%= money(@activity.total_cents("refunds_returns")) %></div></div>
-      <div class="card"><div class="muted"><%= year %> cost of goods sold</div><div class="value"><%= @export_input.cost_of_goods_sold_cents.zero? ? "Missing" : money(@export_input.cost_of_goods_sold_cents) %></div></div>
+      <div class="card">
+        <h2><%= year %> data coverage</h2>
+        <div class="coverage-grid">
+          <div><div class="muted"><%= link_to "Counted rows", tax_packet_path(year: year, anchor: "audit-trail") %></div><div class="value"><%= number_with_delimiter(@year_status.counted_rows_count) %></div></div>
+          <div><div class="muted"><%= link_to "Not on Schedule C", turbo_tax_export_path(year: year, anchor: "left-out-of-schedule-c") %></div><div class="value"><%= number_with_delimiter(@excluded_count) %></div><small class="coverage-hint">Bank transfers, withheld sales tax, reserves</small></div>
+          <div><div class="muted"><%= link_to "Needs review", review_path(year: year, status: "needs_review") %></div><div class="value"><%= number_with_delimiter(@year_status.needs_review_count) %></div></div>
+          <div><div class="muted"><%= link_to "Skipped rows", review_path(year: year, status: "skipped") %></div><div class="value"><%= number_with_delimiter(review_counts.fetch("skipped")) %></div></div>
+        </div>
+        <p class="note">Not on Schedule C is part of counted rows. Rows needing review or skipped do not count toward totals.</p>
+      </div>
     </div>
   <% else %>
     <div class="card empty-state">
@@ -91,7 +108,7 @@
               <td>The last <%= year %> sync stopped early. <%= link_to "See what happened", amazon_import_batch_path(latest_sync) %></td>
             <% elsif @year_status.synced? %>
               <td><span class="pill good">Done</span></td>
-              <td><%= latest_sync&.finished_at ? "Synced #{l(latest_sync.finished_at, format: :short)}." : "#{year} is synced from Amazon." %></td>
+              <td><% if latest_sync&.finished_at %>Synced <%= local_time(latest_sync.finished_at) %>.<% else %><%= year %> is synced from Amazon.<% end %></td>
             <% elsif @year_status.rows? %>
               <td><span class="pill">Upload</span></td>
               <td>This year comes from an uploaded report. Syncing from Amazon would replace it.</td>
@@ -145,7 +162,7 @@
           <% @recent_batches.each do |batch| %>
             <tr>
               <td><%= link_to batch.display_name, amazon_import_batch_path(batch) %></td>
-              <td><%= l(batch.created_at, format: :short) %></td>
+              <td><%= local_time(batch.created_at) %></td>
               <td><%= sync_pill(batch) %></td>
             </tr>
           <% end %>

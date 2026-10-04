@@ -2,5 +2,5 @@
 <%= form_with url: request.path, method: :get, class: "year-switcher" do |form| %>
   <%= form.label :year, "Tax year", for: "tax_year_switcher" %>
   <%= form.select :year, tax_year_options, { selected: current_tax_year }, id: "tax_year_switcher" %>
-  <%= form.submit "Switch", name: nil, class: "button small secondary" %>
+  <%= form.submit "Switch", name: nil, class: "button secondary" %>
 <% end %>

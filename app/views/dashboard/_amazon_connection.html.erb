@@ -2,7 +2,7 @@
 <% year = year_status.year %>
 <div class="card connect-card">
   <% if sandbox_seller? %>
-    <div class="callout"><p>You're signed in as the sandbox seller. Syncs use built-in sample transactions for <%= SandboxSeller::BUSINESS_NAME %>, not Amazon, and each tax year has its own data. Re-syncing a year only adds rows you don't have yet.</p></div>
+    <div class="callout"><p><strong>Sandbox sample data.</strong> Syncs use generated transactions for <%= SandboxSeller::BUSINESS_NAME %>, not Amazon.</p></div>
   <% elsif AmazonSpApi.sandbox? %>
     <div class="callout"><p>Development uses Amazon's sandbox and mock transactions. Each sync fetches the same sample data, whatever tax year you pick. Rows keep Amazon's sample dates, so switch to that year to review them.</p></div>
   <% end %>
@@ -73,7 +73,7 @@
           <span class="pill good">Connected</span>
           <span class="pill">Seller <%= connection.selling_partner_id %></span>
           <% if (latest_sync = year_status.latest_sync) %>
-            <span class="note">Last <%= year %> sync <%= link_to l(latest_sync.created_at, format: :short), amazon_import_batch_path(latest_sync) %></span>
+            <span class="note">Last <%= year %> sync <%= link_to local_time(latest_sync.finished_at || latest_sync.created_at), amazon_import_batch_path(latest_sync) %></span>
             <%= sync_pill(latest_sync) %>
           <% else %>
             <span class="note">You haven't synced <%= year %> yet.</span>
@@ -91,16 +91,21 @@
   <% end %>
 
   <% if connection %>
-    <div class="connect-footer">
-      <p class="note">
-        <% if connection.active? && !active_sync %>
-          A sync pulls every released transaction for the calendar year (Pacific time), and Amazon can lag up to 48 hours. Syncing again only adds new transactions and keeps your reviews.
-        <% else %>
-          Disconnecting deletes the stored authorization. Rows you already synced stay.
-        <% end %>
-      </p>
-      <%= button_to "Disconnect Amazon", amazon_connection_path, method: :delete, class: "button small secondary",
-            form: { onsubmit: "return confirm('Disconnect Amazon? Rows you already synced stay, but we delete the stored authorization.')" } %>
-    </div>
+    <% if connection.active? && !active_sync %>
+      <details class="connect-details">
+        <summary>Sync and connection details</summary>
+        <div class="connect-details-body">
+          <p class="note">A sync pulls released transactions for the calendar year (Pacific time). Amazon can lag up to 48 hours. Re-syncing adds new rows and keeps your reviews.<% if sandbox_seller? %> Sample data is separate for each year.<% end %></p>
+          <%= button_to "Disconnect Amazon", amazon_connection_path, method: :delete, class: "button small secondary",
+                form: { onsubmit: "return confirm('Disconnect Amazon? Rows you already synced stay, but we delete the stored authorization.')" } %>
+        </div>
+      </details>
+    <% else %>
+      <div class="connect-footer">
+        <p class="note">Disconnecting deletes the stored authorization. Rows you already synced stay.</p>
+        <%= button_to "Disconnect Amazon", amazon_connection_path, method: :delete, class: "button small secondary",
+              form: { onsubmit: "return confirm('Disconnect Amazon? Rows you already synced stay, but we delete the stored authorization.')" } %>
+      </div>
+    <% end %>
   <% end %>
 </div>

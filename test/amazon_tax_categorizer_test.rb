@@ -9,6 +9,9 @@ class AmazonTaxCategorizerTest < Minitest::Test
   def test_customer_orders_remain_gross_sales
     assert_equal "gross_sales", category("Shipment", "Sales > ProductCharges")
     assert_equal "shipping", category("Shipment", "Sales > Shipping")
+    assert_equal "shipping", category("Shipment", "Expenses > AmazonFees > ShippingChargeback", -599)
+    assert_equal "shipping", category("Shipment", "Expenses > AmazonFees > ShippingChargeback", 599)
+    assert_equal "refunds_returns", category("Refund", "Sales > Shipping", -599)
   end
 
   def test_account_movements_are_not_gross_sales

@@ -36,7 +36,7 @@
         <% if @export.lines.any? %>
           <tr class="reference-line">
             <td>—</td>
-            <td>After-fee revenue (reference only)</td>
+            <td>Revenue (reference only)</td>
             <td><%= money(@export.activity.revenue_cents) %></td>
           </tr>
         <% end %>
@@ -53,7 +53,7 @@
       </tbody>
     </table>
     <% if @export.lines.any? %>
-      <p class="note">After-fee revenue matches the <%= link_to "#{@year} tax packet", tax_packet_path(year: @year) %>. It's a planning figure, not a TXF line.</p>
+      <p class="note">Gross receipts less refunds, Amazon and FBA fees, advertising, and shipping charges. For planning only; this amount is not exported to TurboTax. See the <%= link_to "#{@year} tax packet", tax_packet_path(year: @year) %>.</p>
     <% end %>
   </div>
 
@@ -80,7 +80,7 @@
 </div>
 
 <div class="card section">
-  <h2>Cost of goods sold</h2>
+  <h2 id="cost-of-goods-sold">Cost of goods sold</h2>
   <p class="guide-copy">Amazon doesn't know what you paid for inventory. Enter your annual totals before you download the final TXF.</p>
   <%= form_with model: @input, url: turbo_tax_export_path(year: @year), method: :patch, local: true do |form| %>
     <%= form.hidden_field :tax_year, value: @year %>
@@ -108,7 +108,7 @@
 </div>
 
 <div class="card section">
-  <h2>Left out of Schedule C</h2>
+  <h2 id="left-out-of-schedule-c">Left out of Schedule C</h2>
   <p class="guide-copy">Transfers to your bank, marketplace-withheld sales tax, and reserves aren't income or expenses.</p>
   <table class="tight">
     <thead>

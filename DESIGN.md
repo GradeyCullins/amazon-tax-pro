@@ -68,7 +68,9 @@ says "imports".
 6. Otherwise → a note naming the years Amazon sync covers
 
 Once data is in, the order is Review (if rows need a category), then cost of goods sold, then
-export. The dashboard's "What needs attention" checklist shows these steps in this order.
+export. The dashboard's "What needs attention" checklist shows these steps, with links to the
+matching pages. The Review count is also visible in navigation and Data coverage, so the
+dashboard does not repeat it in a separate next-step prompt.
 
 ### The tax year
 
@@ -132,12 +134,41 @@ link to the progress page instead.
   against their category (a refunded fee lowers fees). The tax packet shows expenses and withheld
   tax as positive totals. Positive shipping is gross receipts; shipping Amazon charged the seller
   goes on Other business expenses. The audit trail shows each row's signed amount.
-- **Gross receipts vs after-fee revenue.** Gross receipts (sales + shipping credits) is the Schedule C
-  figure. After-fee revenue (gross receipts minus refunds, Amazon and FBA fees, ads, and shipping
-  charges) is a planning figure only: it's labeled "reference only" on the export and never becomes
-  a TXF line.
+- **Gross receipts vs revenue.** Gross receipts (sales + shipping credits) is the Schedule C
+  figure. The planning revenue subtotal (gross receipts minus refunds, Amazon and FBA fees, ads,
+  and shipping charges) appears as "Revenue" in the Tax Packet and "Revenue (reference only)" in
+  the Schedule C preview. Notes explain the calculation and that it is not a Schedule C line or
+  a TurboTax export amount.
+- The dashboard groups the selected year's summary into **Revenue** and **Data coverage** cards.
+  Revenue leads with the planning subtotal and itemizes gross sales, buyer-paid shipping, refunds,
+  Amazon and FBA fees, advertising, and shipping charges so the amount can be reconciled. Data
+  coverage shows counted, excluded-from-Schedule-C, needs-review, and skipped row counts. The
+  excluded count is a subset of counted rows; needs-review and skipped rows do not count. Cost of
+  goods sold remains in the readiness checklist because it is not part of the revenue subtotal.
+- Dashboard coverage labels link to the matching Tax Packet, TurboTax Export, or filtered Review
+  section. The excluded count names transfers, withheld sales tax, and reserves beside the number.
+  Zero-dollar revenue components remain visible in the demo so the full calculation can be checked.
+- The connected Amazon card keeps its status, last sync, and sync action in view. Sync behavior and
+  Disconnect sit in a disclosure below; the sandbox sample-data notice is brief. Dashboard sync
+  timestamps display in the viewer's browser time zone with an explicit abbreviation, falling back
+  to a labeled UTC time when browser scripting is unavailable.
 - Transfers, marketplace-withheld tax, and reserves are counted rows, but they're left out of
   Schedule C lines ("not on Schedule C").
+- The Tax Packet keeps Gross receipts first and Revenue second in a prominent two-card summary.
+  Remaining totals sit in Sales and adjustments, Costs and expenses, and Other activity groups;
+  the last group is explicitly outside Schedule C. A disclosure explains the calculation and
+  display signs. Short review and sandbox notices wrap above the summary. The audit trail filters
+  counted rows by category, shows plain-language labels first, and keeps Amazon fields and source
+  links in an expandable detail. Filtering preserves the selected tax year and pagination; the
+  cost-of-goods-sold empty state explains that its value comes from TurboTax export inputs.
+- Buyer-paid shipping and shipping charges are separate Tax Packet figures: the former adds to
+  gross receipts, while the latter is a selling cost. Both come from the Shipping audit category.
+  Amazon's `Shipment > Expenses > AmazonFees > ShippingChargeback` leaf is a shipping charge,
+  even though Amazon nests it under fees. Negative shipping rows map to other business expenses
+  in the Schedule C export. The Tax Packet method note explains that the TurboTax Other business
+  expenses line combines FBA fees, shipping charges, and the other-business-expenses category.
+  Revenue is explicitly a planning subtotal rather than profit; it excludes reimbursements,
+  cost of goods sold, and other business expenses.
 - Category rule fixes reach existing rows through `bin/rails amazon:recategorize`. It's a dry run
   unless `APPLY=1`, and it only touches rows no person has reviewed.
 
@@ -323,7 +354,7 @@ secondary, so a page of rows isn't a wall of orange.
 
 | Partial | Locals | What it does |
 |---|---|---|
-| `shared/_tax_year_switcher` | none | Year select plus a small "Switch" button, placed in `.page-header .actions` |
+| `shared/_tax_year_switcher` | none | Year select plus a full-size "Switch" button, placed in `.page-header .actions` |
 | `shared/_pagination` | `pagination:` | "Showing a–b of n" with Previous/Next (`rel` set) and a "Page x of y" pill |
 | `shared/_mixed_source_warning` | `year_status:` | `.callout.warn` for a synced year that also has uploaded rows. Links to the sync confirmation, or to Sync history when the year can't be synced. |
 | `amazon_syncs/_sync_action` | `year:` | The next-step button (see [Next-step order](#next-step-order)) |
@@ -369,6 +400,9 @@ The gate copies the tokens it uses. Keep their values identical to the app's `:r
 
 ## 11. Responsive
 
+**Under 820px:**
+- The Tax Packet audit switches to readable row cards before the desktop table columns become cramped. Table headers remain available to assistive technology, and row details and pagination have 44px touch targets.
+
 **Under 720px:**
 - The app bar and shell padding drop to 16px.
 - The nav moves to its own row under the brand and account, and scrolls sideways if needed.
@@ -376,6 +410,7 @@ The gate copies the tokens it uses. Keep their values identical to the app's `:r
   actions too).
 - `.dashboard-main`, `.profile-grid`, and `.guide-grid` become one column.
 - Tables get a 640px minimum width and scroll inside their card.
+- The Tax Packet keeps its year selector and actions in a compact two-column header, with 44px touch targets.
 - Inline forms stretch, and row forms wrap.
 
 **Under 460px:**
@@ -505,3 +540,14 @@ the brand pill style.
 | 2026-10-01 | Added the sandbox seller: a shared login (`sandbox@amazontaxpro.com`) in every environment, created on first sign-in and pre-connected. Its syncs use the real sync pipeline with a generated, deterministic Finances API client instead of Amazon, so the team can develop without real seller accounts. Its password and account are locked, and sign-up can't claim its email. |
 | 2026-10-01 | Added a build ID footer to the app layout: the first 8 characters of the running commit (Kamal's `KAMAL_VERSION` in production, git `HEAD` locally) so the team can tell which build is live. |
 | 2026-10-01 | **Visual refresh.** Replaced the neo-brutalist look with a quieter Seller Central style: full-width ink app bar with a Dashboard link and orange current-page underline, content up to 1920px wide, 1px gray borders, subtle card shadow, no tilts/grid paper/hover lift, sans-serif headings, ink stat values, teal links, tinted status pills and flashes. The connect card now uses a header (title and status left, actions right) and a footer (note and Disconnect). Review row Save/Restore became secondary buttons. The site gate dropped its "vault" look (ticker, tilt, sticker, padlock) and now matches the sign-in page with the app bar and build ID footer. |
+| 2026-10-03 | In the TurboTax Schedule C preview, shortened the planning subtotal label to "Revenue (reference only)" and explained its deductions and exclusion from the export in the note below. |
+| 2026-10-03 | Grouped the dashboard's summary into a reconciled Revenue card and a separate Data coverage card; kept cost of goods sold with tax readiness. |
+| 2026-10-03 | Added a context-aware next-step prompt, linked coverage counts and explained excluded rows, compacted the connected Amazon card, and displayed dashboard sync times in the viewer's time zone. Kept zero-dollar revenue lines visible for the demo. |
+| 2026-10-03 | Reduced the next-step prompt to a compact strip so its action stays visible without repeating the full checklist at card scale. |
+| 2026-10-03 | Removed the next-step strip after finding its Review action duplicated navigation, Data coverage, and the "What needs attention" checklist. |
+| 2026-10-03 | Renamed the Tax Packet's planning subtotal from "After-fee revenue" to "Revenue" while retaining the calculation and Schedule C distinction in its note. |
+| 2026-10-03 | Gave the Tax Packet a two-figure summary, grouped the remaining category totals, compacted its notices, and made its accepted-row audit trail filterable by category with plain-language labels and expandable Amazon details. |
+| 2026-10-03 | Audited the Tax Packet totals against both sandbox years and the Schedule C export. Split shipping credits and charges in the display, clarified that Revenue excludes COGS and other income/expenses, and refined the summary and audit-trail copy. |
+| 2026-10-03 | Corrected Shipment ShippingChargeback categorization from Amazon fees to Shipping, then recategorized only the local sandbox seller's unreviewed rows. Gross receipts and Revenue stayed the same; the fee and shipping breakdown, audit labels, and Schedule C expense lines now reconcile. |
+| 2026-10-03 | Aligned the TurboTax Revenue reference note with its full formula, including FBA fees, and explained why the Tax Packet's separate expense categories combine into one TurboTax Other business expenses line. |
+| 2026-10-04 | Made the shared tax-year Switch control full height. On narrow screens, the Tax Packet uses touch-sized actions and a readable audit card layout instead of horizontal table scrolling. |

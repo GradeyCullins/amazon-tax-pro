@@ -7,6 +7,12 @@ module ApplicationHelper
     number_to_currency(cents.to_i / 100.0)
   end
 
+  # Show UTC until the browser replaces it with the viewer's local time and zone.
+  def local_time(time)
+    utc_time = time.utc
+    tag.time("#{l(utc_time, format: :short)} UTC", datetime: utc_time.iso8601, data: { local_time: true })
+  end
+
   def review_pill(review_status, text = AmazonImportRow::REVIEW_STATUSES.fetch(review_status))
     tag.span(text, class: ["pill", REVIEW_PILL_CLASSES[review_status]])
   end

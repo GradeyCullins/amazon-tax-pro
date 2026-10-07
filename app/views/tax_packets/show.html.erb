@@ -1,7 +1,7 @@
 <div class="page-header tax-packet-header">
   <div>
     <h1>Tax Packet <%= @year %></h1>
-    <p class="muted">Your <%= @year %> totals from every row that counts: auto-categorized and accepted. Review with a tax professional before filing.</p>
+    <p class="muted">Your <%= @year %> Amazon totals and business expenses entered outside Amazon. Review with a tax professional before filing.</p>
   </div>
   <div class="actions">
     <%= render "shared/tax_year_switcher" %>
@@ -10,7 +10,7 @@
   </div>
 </div>
 
-<% if !@year_status.rows? %>
+<% if !@year_status.rows? && @outside_expenses.empty? %>
   <div class="card empty-state">
     <h2>No <%= @year %> transactions yet</h2>
     <p class="guide-copy">Your tax packet fills in once you sync <%= @year %> from Amazon.</p>
@@ -36,12 +36,12 @@
 
   <div class="grid tax-packet-summary">
     <div class="card">
-      <div class="muted">Gross receipts</div>
+      <div class="muted">Amazon gross receipts</div>
       <div class="value"><%= money(@activity.gross_receipts_cents) %></div>
       <p class="note">Product sales + buyer-paid shipping · Schedule C gross receipts</p>
     </div>
     <div class="card">
-      <div class="muted">Revenue</div>
+      <div class="muted">Amazon revenue</div>
       <div class="value"><%= money(@activity.revenue_cents) %></div>
       <p class="note">After refunds, fees, ads, and shipping charges · planning only</p>
     </div>
@@ -73,18 +73,38 @@
   <details class="tax-packet-method">
     <summary>How these totals are calculated</summary>
     <p class="note">
-      Gross receipts add product sales and buyer-paid shipping. Revenue subtracts refunds, Amazon and FBA fees,
+      Amazon gross receipts add product sales and buyer-paid shipping. Amazon revenue subtracts refunds, Amazon and FBA fees,
       advertising, and shipping charges from gross receipts. This planning subtotal excludes reimbursements, cost
-      of goods sold, and other business expenses, so it is not profit or a Schedule C line. Credits reduce their
+      of goods sold, outside Amazon expenses, and other business expenses, so it is not profit or a Schedule C line. Credits reduce their
       category totals; the audit trail keeps each row's signed amount. In TurboTax, FBA fees, shipping charges,
       and the other business expenses category combine on one expense line. Cost of goods sold comes from your
       <%= link_to "TurboTax export inputs", turbo_tax_export_path(year: @year) %>.
     </p>
   </details>
 
+  <section class="card section tax-packet-outside" id="outside-amazon-expenses">
+    <div class="tax-packet-outside-header">
+      <div class="tax-packet-outside-heading">
+        <h2>Outside Amazon expenses</h2>
+        <div class="value"><%= money(@outside_total_cents) %></div>
+      </div>
+      <%= link_to "Add or edit expenses", outside_expenses_path(year: @year), class: "button secondary" %>
+    </div>
+    <p class="note"><%= pluralize(@outside_expenses.size, "expense") %> entered for <%= @year %>, after business-use percentages. Included in the TurboTax export.</p>
+    <% if @outside_by_category.any? %>
+      <dl class="tax-packet-figures outside-breakdown">
+        <% @outside_by_category.sort_by { |category, _| OutsideExpense::CATEGORIES.fetch(category) }.each do |category, cents| %>
+          <dt><%= OutsideExpense::CATEGORIES.fetch(category) %></dt><dd><%= money(cents) %></dd>
+        <% end %>
+      </dl>
+    <% else %>
+      <p class="guide-copy">Nothing entered outside Amazon yet.</p>
+    <% end %>
+  </section>
+
   <div class="card section">
     <h2 id="audit-trail">Audit trail</h2>
-    <p class="note">Accepted transaction rows behind these totals. Cost of goods sold is entered separately.</p>
+    <p class="note">Accepted Amazon transaction rows behind the Amazon totals. Outside Amazon expenses and cost of goods sold are entered separately.</p>
     <%= form_with url: tax_packet_path, method: :get, class: "tax-packet-filter" do |form| %>
       <%= hidden_field_tag :year, @year, id: nil %>
       <div>
@@ -104,7 +124,7 @@
       <% elsif @category %>
         <p class="guide-copy">No counted Amazon rows in this category.</p>
       <% else %>
-        <p class="guide-copy">No <%= @year %> rows count yet. <%= link_to "Review #{@year}", review_path(year: @year) %></p>
+      <p class="guide-copy">No Amazon rows count for <%= @year %> yet. <%= link_to "Review #{@year}", review_path(year: @year) %></p>
       <% end %>
     <% else %>
       <p class="tax-packet-result-count">Showing <%= number_with_delimiter(@pagination.first_item) %>–<%= number_with_delimiter(@pagination.last_item) %> of <%= number_with_delimiter(@pagination.total_count) %> counted <%= "row".pluralize(@pagination.total_count) %></p>

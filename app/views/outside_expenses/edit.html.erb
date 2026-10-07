@@ -1,0 +1,11 @@
+<div class="page-header">
+  <div>
+    <h1>Edit outside Amazon expense</h1>
+    <p class="muted"><%= @year %> · <%= @expense.payee %></p>
+  </div>
+  <div class="actions"><%= link_to "Back to Outside Amazon", outside_expenses_path(year: @year), class: "button secondary" %></div>
+</div>
+
+<section class="card">
+  <%= render "form", expense: @expense, year: @year %>
+</section>

@@ -1,11 +1,12 @@
 <div class="page-header">
   <div>
     <h1>TurboTax Export <%= @year %></h1>
-    <p class="muted">Turn your <%= @year %> rows that count into a TurboTax Desktop TXF file, plus an audit CSV for your records.</p>
+    <p class="muted">Turn your <%= @year %> Amazon rows and outside Amazon expenses into a TurboTax Desktop TXF file, plus an audit CSV for your records.</p>
   </div>
   <div class="actions">
     <%= render "shared/tax_year_switcher" %>
     <%= link_to "Review", review_path(year: @year), class: "button secondary" %>
+    <%= link_to "Outside Amazon", outside_expenses_path(year: @year), class: "button secondary" %>
     <%= link_to "Tax packet", tax_packet_path(year: @year), class: "button secondary" %>
   </div>
 </div>
@@ -14,7 +15,7 @@
 
 <% if !@export.year_status.rows? %>
   <div class="callout warn">
-    <p>No <%= @year %> transactions yet. Sync <%= @year %> from Amazon first; you can still enter cost of goods sold below.</p>
+    <p>No <%= @year %> Amazon transactions yet. Sync <%= @year %> from Amazon; you can still enter outside expenses and cost of goods sold.</p>
     <div class="actions">
       <%= render "amazon_syncs/sync_action", year: @year %>
     </div>
@@ -33,7 +34,7 @@
         </tr>
       </thead>
       <tbody>
-        <% if @export.lines.any? %>
+        <% if @export.year_status.rows? %>
           <tr class="reference-line">
             <td>—</td>
             <td>Revenue (reference only)</td>
@@ -48,12 +49,12 @@
           </tr>
         <% end %>
         <% if @export.lines.empty? %>
-          <tr><td colspan="3">No <%= @year %> rows count toward Schedule C yet.</td></tr>
+          <tr><td colspan="3">No <%= @year %> amounts count toward Schedule C yet.</td></tr>
         <% end %>
       </tbody>
     </table>
-    <% if @export.lines.any? %>
-      <p class="note">Gross receipts less refunds, Amazon and FBA fees, advertising, and shipping charges. For planning only; this amount is not exported to TurboTax. See the <%= link_to "#{@year} tax packet", tax_packet_path(year: @year) %>.</p>
+    <% if @export.year_status.rows? %>
+      <p class="note">Amazon gross receipts less refunds, Amazon and FBA fees, advertising, and shipping charges. For planning only; this amount excludes outside Amazon expenses and is not exported to TurboTax. See the <%= link_to "#{@year} tax packet", tax_packet_path(year: @year) %>.</p>
     <% end %>
   </div>
 
@@ -77,6 +78,15 @@
       <%= link_to "Instructions", download_turbo_tax_export_path(year: @year, format_type: "instructions"), class: "button secondary" %>
     </div>
   </div>
+</div>
+
+<div class="card section outside-reminder">
+  <div>
+    <h2>Outside Amazon expenses</h2>
+    <div class="value"><%= money(@export.outside_expense_total_cents) %></div>
+    <p class="note"><%= pluralize(@export.outside_expenses.size, "expense") %> included in the Schedule C preview and TXF.</p>
+  </div>
+  <%= link_to "Add or edit expenses", outside_expenses_path(year: @year), class: "button secondary" %>
 </div>
 
 <div class="card section">

@@ -6,7 +6,7 @@
 <div class="page-header">
   <div>
     <h1>Amazon Seller Tax Readiness</h1>
-    <p class="muted">Connect Amazon, sync a tax year, fix anything we couldn't categorize, then hand the results to your CPA or TurboTax.</p>
+    <p class="muted">Connect Amazon, sync a tax year, fix anything we couldn't categorize, add business expenses paid elsewhere, then hand the results to your CPA or TurboTax.</p>
   </div>
   <% if @connection || @has_rows %>
     <div class="actions">
@@ -41,10 +41,11 @@
     </div>
     <div class="card guide-card">
       <div class="guide-step">4</div>
-      <h3>Add COGS and export</h3>
-      <p class="guide-copy">Amazon doesn't know what you paid for inventory. Add your cost of goods sold, then download the tax packet or the TurboTax file.</p>
+      <h3>Add outside expenses and COGS</h3>
+      <p class="guide-copy">Add business expenses paid outside Amazon and your cost of goods sold, then download the tax packet or TurboTax file.</p>
     </div>
   </div>
+  <%= render "outside_expenses_card", year: year %>
 <% else %>
   <%= render "shared/mixed_source_warning", year_status: @year_status %>
 
@@ -91,6 +92,8 @@
       </p>
     </div>
   <% end %>
+
+  <%= render "outside_expenses_card", year: year %>
 
   <div class="grid dashboard-main">
     <div class="card">

@@ -5,6 +5,7 @@ class User < ApplicationRecord
   has_many :amazon_import_batches, dependent: :destroy
   has_many :amazon_import_rows, dependent: :delete_all
   has_many :turbo_tax_export_inputs, dependent: :destroy
+  has_many :outside_expenses, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
   normalizes :display_name, :business_name, with: ->(value) { value.strip.presence }
@@ -40,6 +41,7 @@ class User < ApplicationRecord
       AmazonImportRow.where(user_id: id).delete_all
       AmazonImportBatch.where(user_id: id).delete_all
       TurboTaxExportInput.where(user_id: id).delete_all
+      OutsideExpense.where(user_id: id).delete_all
       AmazonConnection.where(user_id: id).delete_all
       Session.where(user_id: id).delete_all
       destroy!

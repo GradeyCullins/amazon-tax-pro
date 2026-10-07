@@ -36,6 +36,6 @@ module TaxYearContext
   end
 
   def years_with_rows
-    @years_with_rows ||= Current.user ? Current.user.amazon_import_rows.years : []
+    @years_with_rows ||= Current.user ? (Current.user.amazon_import_rows.years + Current.user.outside_expenses.years).uniq.sort.reverse : []
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_064847) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_000100) do
   create_table "accounts", force: :cascade do |t|
     t.integer "balance_cents", default: 0, null: false
     t.datetime "created_at", null: false
@@ -105,6 +105,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_064847) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "outside_expenses", force: :cascade do |t|
+    t.integer "amount_cents", null: false
+    t.datetime "archived_at"
+    t.integer "business_use_percent", default: 100, null: false
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.string "payee", null: false
+    t.date "spent_on", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "spent_on", "archived_at"], name: "index_outside_expenses_on_user_id_and_spent_on_and_archived_at"
+    t.index ["user_id"], name: "index_outside_expenses_on_user_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -160,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_064847) do
   add_foreign_key "amazon_import_rows", "expenses"
   add_foreign_key "amazon_import_rows", "transactions"
   add_foreign_key "amazon_import_rows", "users"
+  add_foreign_key "outside_expenses", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "transactions", "accounts", column: "credit_account_id"
   add_foreign_key "transactions", "accounts", column: "debit_account_id"

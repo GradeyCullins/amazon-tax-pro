@@ -7,6 +7,9 @@ class DashboardController < ApplicationController
     @has_rows = @years_with_rows.any? || Current.user.amazon_import_rows.exists?
     @recent_batches = Current.user.amazon_import_batches.order(created_at: :desc).limit(5)
     @export_input = Current.user.turbo_tax_export_inputs.for_year(current_tax_year)
+    outside_entries = Current.user.outside_expenses.active.for_year(current_tax_year).to_a
+    @outside_expense_count = outside_entries.size
+    @outside_expense_total_cents = outside_entries.sum(&:deductible_cents)
 
     return unless @year_status.rows?
 

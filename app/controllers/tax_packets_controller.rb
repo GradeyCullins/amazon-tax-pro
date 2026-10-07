@@ -10,6 +10,9 @@ class TaxPacketsController < ApplicationController
     @year_status = TaxYearStatus.new(Current.user, @year)
     @activity = AmazonYearActivity.new(user: Current.user, year: @year)
     @cogs_input = Current.user.turbo_tax_export_inputs.for_year(@year)
+    @outside_expenses = Current.user.outside_expenses.active.for_year(@year).order(spent_on: :desc, id: :desc).to_a
+    @outside_total_cents = @outside_expenses.sum(&:deductible_cents)
+    @outside_by_category = @outside_expenses.group_by(&:category).transform_values { |entries| entries.sum(&:deductible_cents) }
     @category = params[:category] if AmazonImportRow::TAX_CATEGORIES.except("uncategorized").key?(params[:category])
     audit_rows = @activity.rows
     audit_rows = audit_rows.where(tax_category: @category) if @category

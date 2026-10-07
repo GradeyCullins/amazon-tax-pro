@@ -7,7 +7,7 @@ the code or record the new decision here (see the [decision log](#16-decision-lo
 ## 1. Product principles
 
 1. **Sync first.** The main path is **Connect Amazon → Sync a tax year → Fix what we couldn't
-   categorize → Add cost of goods sold and export**. Each page's main call to action moves the
+   categorize → Add outside Amazon expenses → Add cost of goods sold and export**. Each page's main call to action moves the
    seller one step along that path.
 2. **Tax-year centric.** Sellers think in tax years, not syncs or files. The whole app shares one
    selected year. Every year-scoped page shows that year and has the same year switcher.
@@ -32,7 +32,7 @@ the code or record the new decision here (see the [decision log](#16-decision-lo
 ### Navigation
 
 The app bar shows, in order: the brand (links to the dashboard) · **Dashboard** · **Review** ·
-**Tax Packet** · **TurboTax Export**, then on the right the display name or email (links to
+**Outside Amazon** · **Tax Packet** · **TurboTax Export**, then on the right the display name or email (links to
 Profile & settings) · Sign out.
 
 - The Review link carries a count pill with the number of rows that need review in the
@@ -43,6 +43,7 @@ Profile & settings) · Sign out.
 |---|---|---|---|
 | Dashboard | `/` | Amazon connection, the year's status, and what needs attention | The next step for the current state (see below) |
 | Review | `/review` | All of the year's rows, opening on *Needs review* | Accept / Save / Skip / Restore per row |
+| Outside Amazon | `/outside-amazon` | Add and edit ordinary business expenses paid outside Amazon, with a business-use percentage | Add expense |
 | Tax Packet | `/tax-packet` | Year totals by category and an audit trail of counted rows, to share with a tax professional | None (read-only); links to Review and TurboTax Export |
 | TurboTax Export | `/turbotax-export` | Cost of goods sold inputs, Schedule C preview, readiness, downloads | Download TXF |
 | Sync history | `/amazon-imports` | Every sync run and upload | Sync the current year |
@@ -67,10 +68,11 @@ says "imports".
 5. The year can be synced (the current year and the 3 before it) → **Sync YEAR**
 6. Otherwise → a note naming the years Amazon sync covers
 
-Once data is in, the order is Review (if rows need a category), then cost of goods sold, then
-export. The dashboard's "What needs attention" checklist shows these steps, with links to the
-matching pages. The Review count is also visible in navigation and Data coverage, so the
-dashboard does not repeat it in a separate next-step prompt.
+Once data is in, the order is Review (if rows need a category), outside Amazon expenses (if any),
+cost of goods sold, then export. The dashboard keeps outside Amazon expenses in a compact reminder
+card with the selected year's business-use-adjusted total and an add/edit link. The Review count is
+also visible in navigation and Data coverage, so the dashboard does not repeat it in a separate
+next-step prompt.
 
 ### The tax year
 
@@ -92,7 +94,7 @@ More rules:
 - The switcher lists every year that can be synced plus every year with rows, newest first.
 - Switching submits a GET to the current path with only `year`, which also resets filters and
   pagination.
-- Year-scoped pages are the Dashboard, Review, Tax Packet, and TurboTax Export. The h1 on these
+- Year-scoped pages are the Dashboard, Review, Outside Amazon, Tax Packet, and TurboTax Export. The h1 on these
   pages is the nav label plus the year ("Review 2025", "Tax Packet 2025"). The dashboard is the
   exception: its h1 has no year, so it prefixes each stat label with the year instead.
 - Links between year-scoped pages pass `year:`, so a second browser tab on another year can't
@@ -157,7 +159,8 @@ link to the progress page instead.
 - The Tax Packet keeps Gross receipts first and Revenue second in a prominent two-card summary.
   Remaining totals sit in Sales and adjustments, Costs and expenses, and Other activity groups;
   the last group is explicitly outside Schedule C. A disclosure explains the calculation and
-  display signs. Short review and sandbox notices wrap above the summary. The audit trail filters
+  display signs. The separate Outside Amazon expense card follows these Amazon breakdowns, in a
+  compact full-width layout with its total, category amounts, and edit link. Short review and sandbox notices wrap above the summary. The audit trail filters
   counted rows by category, shows plain-language labels first, and keeps Amazon fields and source
   links in an expandable detail. Filtering preserves the selected tax year and pagination; the
   cost-of-goods-sold empty state explains that its value comes from TurboTax export inputs.
@@ -171,6 +174,29 @@ link to the progress page instead.
   cost of goods sold, and other business expenses.
 - Category rule fixes reach existing rows through `bin/rails amazon:recategorize`. It's a dry run
   unless `APPLY=1`, and it only touches rows no person has reviewed.
+
+### Outside Amazon expenses
+
+- The first draft accepts ordinary operating expenses only. Each entry belongs to a user, uses the
+  selected tax year, and records expense date, merchant/person paid, amount paid, business-use
+  percentage, Schedule C category, and an optional business-purpose note. The amount counted is the paid amount times the
+  business-use percentage, rounded to cents. Entries can be edited, removed, and restored; removed
+  entries remain visible in a disclosure and do not count in totals or exports.
+- The form names the merchant/person paid and explains that this is not the card used. It uses the
+  receipt/card-charge/payment date, blocks future dates, explains the full charge versus the business
+  share, and gives category guidance. There is no payment-card/account field in the core form.
+- The page puts the counted total and entry count in one compact summary strip. A "What counts?"
+  disclosure beside the form heading gives a short entry rule without a separate card. It names
+  inventory purchases as an exclusion to prevent duplicate entry, without listing special calculations.
+  On wide screens the six form fields fill three columns; they step down to two, then one column.
+- The dashboard card shows only the selected year's counted expense total and entry count. The
+  Outside Amazon page is the full entry and review surface. The Tax Packet presents a separate
+  source breakdown, and the Schedule C preview, TXF, and audit CSV include active entries by
+  category. Amazon's revenue planning figure remains Amazon-only.
+- The simple form excludes personal expenses, inventory purchases already handled by cost of goods
+  sold, and specialized calculations such as mileage, meals, home office, and equipment. These need
+  dedicated fields and review before they can be calculated reliably. Off-Amazon income is a later
+  addition; this first draft covers expenses paid outside Amazon.
 
 ## 4. Visual language
 
@@ -551,3 +577,9 @@ the brand pill style.
 | 2026-10-03 | Corrected Shipment ShippingChargeback categorization from Amazon fees to Shipping, then recategorized only the local sandbox seller's unreviewed rows. Gross receipts and Revenue stayed the same; the fee and shipping breakdown, audit labels, and Schedule C expense lines now reconcile. |
 | 2026-10-03 | Aligned the TurboTax Revenue reference note with its full formula, including FBA fees, and explained why the Tax Packet's separate expense categories combine into one TurboTax Other business expenses line. |
 | 2026-10-04 | Made the shared tax-year Switch control full height. On narrow screens, the Tax Packet uses touch-sized actions and a readable audit card layout instead of horizontal table scrolling. |
+| 2026-10-05 | Added a compact dashboard reminder and an Outside Amazon tab between Review and Tax Packet. The first draft records ordinary outside-Amazon business expenses, counts the business share in the Tax Packet and TurboTax outputs, and retains removed entries for restoration. |
+| 2026-10-05 | Clarified Outside Amazon entry fields: merchant/payee, receipt/charge date, amount, category, business use, and notes have concise guidance; future dates are blocked. Removed the optional payment-card/account field after review because it added little to the tax-entry flow. |
+| 2026-10-05 | Moved the Tax Packet's Outside Amazon expenses below the Amazon summary and breakdown groups, before the audit trail, and compacted its card while retaining its category totals and edit link. |
+| 2026-10-06 | Compacted the Outside Amazon guidance into a disclosure, used a three-column expense form on wide screens for quicker entry. |
+| 2026-10-06 | Replaced the uneven total and guidance cards on Outside Amazon with a full-width summary strip and moved the "What counts?" disclosure beside the expense form heading. |
+| 2026-10-06 | Shortened "What counts?" to the Outside Amazon entry rule and three exclusions; removed the COGS explanation and special-calculation list while keeping inventory as a duplicate-entry guardrail. |

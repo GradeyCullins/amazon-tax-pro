@@ -15,6 +15,9 @@ Rails.application.routes.draw do
   end
   resources :amazon_syncs, path: "amazon/syncs", only: [:new, :create]
   resource :review, only: [:show]
+  resources :outside_expenses, path: "outside-amazon", only: [:index, :create, :edit, :update, :destroy] do
+    patch :restore, on: :member
+  end
   resources :amazon_import_batches, path: "amazon-imports", only: [:index, :new, :create, :show, :destroy]
   resources :amazon_import_rows, path: "amazon-import-rows", only: [:update]
   resource :tax_packet, path: "tax-packet", only: [:show]

@@ -8,6 +8,14 @@ class TurboTaxExport
     other_business_income: 303,
     advertising: 304,
     commissions_and_fees: 307,
+    insurance: 310,
+    legal_professional: 298,
+    office_expense: 313,
+    rent: 300,
+    repairs: 315,
+    supplies: 301,
+    taxes_licenses: 316,
+    utilities: 318,
     other_business_expenses: 302
   }.freeze
 
@@ -62,6 +70,14 @@ class TurboTaxExport
       Line.new(key: key, label: label_for(key), txf_ref: SCHEDULE_C_REFS.fetch(key), amount_cents: amount_cents)
     end
 
+    outside_expenses.group_by(&:category).each do |category, expenses|
+      key = category.to_sym
+      generated << Line.new(
+        key: key, label: label_for(key), txf_ref: SCHEDULE_C_REFS.fetch(key),
+        amount_cents: -expenses.sum(&:deductible_cents)
+      )
+    end
+
     if input.cost_of_goods_sold_cents.positive?
       generated << Line.new(
         key: :cost_of_goods_sold,
@@ -71,7 +87,17 @@ class TurboTaxExport
       )
     end
 
-    generated.reject { |line| line.amount_cents.zero? }.sort_by(&:txf_ref)
+    generated.group_by(&:key).map do |key, line_items|
+      Line.new(key: key, label: label_for(key), txf_ref: SCHEDULE_C_REFS.fetch(key), amount_cents: line_items.sum(&:amount_cents))
+    end.reject { |line| line.amount_cents.zero? }.sort_by(&:txf_ref)
+  end
+
+  def outside_expenses
+    @outside_expenses ||= input.user.outside_expenses.active.for_year(year).order(:spent_on, :id).to_a
+  end
+
+  def outside_expense_total_cents
+    outside_expenses.sum(&:deductible_cents)
   end
 
   def excluded_rows
@@ -132,6 +158,13 @@ class TurboTaxExport
           row.amazon_import_batch.source_label
         ]
       end
+
+      outside_expenses.each do |expense|
+        details = [expense.payee, expense.description].reject(&:blank?).join(" — ")
+        details += " (#{expense.business_use_percent}% of $#{format_amount(expense.amount_cents)} paid)"
+        csv << [expense.spent_on, expense.category_name, format_amount(-expense.deductible_cents),
+          label_for(expense.category.to_sym), details, nil, "Entered", "Outside Amazon"]
+      end
     end
   end
 
@@ -144,7 +177,7 @@ class TurboTaxExport
         <li>Choose File, then Import.</li>
         <li>On Windows choose From Accounting Software. On Mac choose From TXF Files.</li>
         <li>Select the generated .txf file and complete the TurboTax import prompts.</li>
-        <li>Review Schedule C inside TurboTax before filing. Confirm business name, inventory/COGS, and any non-Amazon expenses.</li>
+        <li>Review Schedule C inside TurboTax before filing. Confirm business name, inventory/COGS, outside Amazon expenses, and any special deductions not handled here.</li>
       </ol>
       <h2>Important review items</h2>
       <ul>
@@ -179,6 +212,14 @@ class TurboTaxExport
       other_business_income: "Other business income",
       advertising: "Advertising",
       commissions_and_fees: "Commissions and fees",
+      insurance: "Business insurance (not health)",
+      legal_professional: "Legal and professional",
+      office_expense: "Office expense",
+      rent: "Business rent (not home office)",
+      repairs: "Repairs and maintenance",
+      supplies: "Supplies",
+      taxes_licenses: "Taxes and licenses",
+      utilities: "Business utilities (not home office)",
       other_business_expenses: "Other business expenses"
     }.fetch(key)
   end

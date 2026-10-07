@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div>
+    <h1>Outside Amazon <%= @year %></h1>
+    <p class="muted">Add business expenses paid outside Amazon. They appear in your tax packet and TurboTax export.</p>
+  </div>
+  <div class="actions">
+    <%= render "shared/tax_year_switcher" %>
+    <%= link_to "Tax packet", tax_packet_path(year: @year), class: "button secondary" %>
+  </div>
+</div>
+
+<section class="card outside-summary" aria-label="Outside Amazon expense total">
+  <div>
+    <div class="muted"><%= @year %> business expense total</div>
+    <p class="note"><%= pluralize(@entries.size, "expense") %> entered · after business-use percentages</p>
+  </div>
+  <div class="value"><%= money(@total_cents) %></div>
+</section>
+
+<section class="card section" id="add-expense">
+  <div class="outside-form-header">
+    <h2>Add a business expense</h2>
+    <details class="outside-form-guide">
+      <summary>What counts?</summary>
+      <div class="outside-form-guide-body">
+        <p>Use this for ordinary business expenses paid outside Amazon that are not already in your Amazon data. Leave out personal spending, Amazon fees, and inventory purchases.</p>
+      </div>
+    </details>
+  </div>
+  <%= render "form", expense: @expense, year: @year %>
+</section>
+
+<section class="card section">
+  <h2>Expenses entered</h2>
+  <% if @entries.empty? %>
+    <p class="guide-copy">No outside Amazon expenses entered for <%= @year %> yet.</p>
+  <% else %>
+    <table class="tight outside-table">
+      <thead><tr><th scope="col">Date</th><th scope="col">Merchant</th><th scope="col">Category</th><th scope="col">Amount paid</th><th scope="col">Business use</th><th scope="col">Counted</th><th scope="col">Actions</th></tr></thead>
+      <tbody>
+        <% @entries.each do |entry| %>
+          <tr>
+            <td><%= entry.spent_on %></td>
+            <td><strong><%= entry.payee %></strong><% if entry.description.present? %><br><span class="note"><%= entry.description %></span><% end %></td>
+            <td><%= entry.category_name %></td>
+            <td><%= money(entry.amount_cents) %></td>
+            <td><%= entry.business_use_percent %>%</td>
+            <td><strong><%= money(entry.deductible_cents) %></strong></td>
+            <td><div class="actions"><%= link_to "Edit", edit_outside_expense_path(entry, year: @year), class: "button small secondary" %><%= button_to "Remove", outside_expense_path(entry, year: @year), method: :delete, class: "button small secondary" %></div></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <% if @archived_entries.any? %>
+    <details class="outside-removed">
+      <summary>Removed expenses (<%= @archived_entries.size %>)</summary>
+      <ul class="guide-list">
+        <% @archived_entries.each do |entry| %>
+          <li><%= entry.spent_on %> · <%= entry.payee %> · <%= money(entry.deductible_cents) %> <%= button_to "Restore", restore_outside_expense_path(entry, year: @year), method: :patch, class: "button small secondary" %></li>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+</section>

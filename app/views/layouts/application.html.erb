@@ -135,6 +135,30 @@
       .cards { grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); }
       .dashboard-main { grid-template-columns:minmax(0, 2fr) minmax(300px, 1fr); margin-top:16px; }
       .dashboard-overview { grid-template-columns:minmax(0, 2fr) minmax(300px, 1fr); }
+      .outside-reminder { align-items:center; display:flex; gap:16px; justify-content:space-between; }
+      .outside-reminder h2 { margin:0; }
+      .outside-reminder .value { font-size:24px; }
+      .outside-reminder .note { margin-top:4px; }
+      .outside-summary { align-items:center; display:flex; flex-wrap:wrap; gap:8px 24px; justify-content:space-between; }
+      .outside-summary .value { font-size:30px; margin:0; }
+      .outside-summary .note { margin-top:4px; }
+      .outside-form-header { margin-bottom:16px; position:relative; }
+      .outside-form-header h2 { margin:0; }
+      .outside-form-guide summary { color:var(--link); cursor:pointer; font-size:14px; font-weight:600; position:absolute; right:0; text-align:right; top:2px; }
+      .outside-form-guide-body { border-left:3px solid var(--border-strong); color:var(--text); font-size:14px; line-height:1.5; margin-top:16px; max-width:950px; padding:2px 0 2px 14px; }
+      .outside-form-guide-body p { margin:0 0 8px; }
+      .outside-form-guide-body p:last-child { margin-bottom:0; }
+      .outside-form-grid { display:grid; gap:0 16px; grid-template-columns:repeat(3, minmax(0, 1fr)); }
+      .outside-form-grid .form-row { max-width:none; }
+      .outside-form-grid input, .outside-form-grid select { width:100%; }
+      .outside-table td:nth-child(4), .outside-table td:nth-child(6) { font-variant-numeric:tabular-nums; white-space:nowrap; }
+      .outside-table .note { margin:0; }
+      .outside-table .actions { flex-wrap:nowrap; }
+      .outside-removed { margin-top:16px; }
+      .outside-removed summary { color:var(--link); cursor:pointer; font-weight:600; }
+      .outside-removed .guide-list { margin-top:10px; }
+      .outside-removed li { align-items:center; display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; }
+      .outside-removed form { margin:0; }
       .revenue-layout { display:grid; gap:24px; grid-template-columns:minmax(180px, .9fr) minmax(260px, 1.1fr); }
       .value.revenue-value { font-size:clamp(32px, 4vw, 42px); }
       .revenue-breakdown { display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:16px; margin:0; }
@@ -313,6 +337,14 @@
       .tax-packet-figures dt, .tax-packet-figures dd { border-bottom:1px solid var(--border); font-size:14px; margin:0; padding:9px 0; }
       .tax-packet-figures dt:nth-last-child(2), .tax-packet-figures dd:last-child { border-bottom:0; }
       .tax-packet-figures dd { font-variant-numeric:tabular-nums; font-weight:600; text-align:right; white-space:nowrap; }
+      .tax-packet-outside { padding:16px 20px; }
+      .tax-packet-outside-header { align-items:center; display:flex; flex-wrap:wrap; gap:12px 20px; justify-content:space-between; }
+      .tax-packet-outside-heading { align-items:baseline; display:flex; flex-wrap:wrap; gap:8px 20px; }
+      .tax-packet-outside-heading h2 { margin:0; }
+      .tax-packet-outside-heading .value { font-size:24px; margin:0; }
+      .tax-packet-outside > .note { margin:4px 0 0; }
+      .tax-packet-outside .outside-breakdown { margin-top:8px; }
+      .tax-packet-outside .tax-packet-figures dt, .tax-packet-outside .tax-packet-figures dd { padding:7px 0; }
       .tax-packet-method { margin:14px 0 0; }
       .tax-packet-method summary { color:var(--link); cursor:pointer; font-size:13px; font-weight:600; }
       .tax-packet-method .note { margin-top:6px; max-width:1100px; }
@@ -413,6 +445,7 @@
       li { margin-bottom:6px; }
 
       @media (max-width: 1000px) {
+        .outside-form-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
         .revenue-layout { grid-template-columns:1fr; }
         .tax-packet-groups { grid-template-columns:repeat(2, minmax(0, 1fr)); }
         .tax-packet-groups > :last-child { grid-column:1 / -1; }
@@ -448,6 +481,11 @@
         .connect-header .actions { width:100%; }
         .dashboard-main { grid-template-columns:1fr; }
         .dashboard-overview { grid-template-columns:1fr; }
+        .outside-form-grid { grid-template-columns:1fr; }
+        .outside-form-header h2 { margin-bottom:8px; }
+        .outside-form-guide summary { position:static; text-align:left; }
+        .outside-reminder { align-items:flex-start; flex-direction:column; }
+        .outside-table { min-width:800px; }
         .tax-packet-groups { grid-template-columns:1fr; }
         .tax-packet-groups > :last-child { grid-column:auto; }
         .tax-packet-header .actions { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
@@ -495,6 +533,7 @@
               <span class="nav-count"><%= review_count %><span class="sr-only"> rows need review</span></span>
             <% end %>
           <% end %>
+          <%= link_to "Outside Amazon", outside_expenses_path, aria: { current: ("page" if controller_name == "outside_expenses") } %>
           <%= nav_link "Tax Packet", tax_packet_path %>
           <%= nav_link "TurboTax Export", turbo_tax_export_path %>
         </nav>

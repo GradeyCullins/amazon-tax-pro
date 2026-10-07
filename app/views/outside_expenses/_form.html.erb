@@ -1,0 +1,45 @@
+<% if expense.errors.any? %>
+  <div class="callout warn" role="alert">
+    <p><strong>Check this expense:</strong> <%= expense.errors.full_messages.to_sentence %>.</p>
+  </div>
+<% end %>
+
+<%= form_with model: expense, url: expense.persisted? ? outside_expense_path(expense, year: year) : outside_expenses_path(year: year), local: true do |form| %>
+  <div class="outside-form-grid">
+    <div class="form-row">
+      <%= form.label :spent_on, "Expense date" %>
+      <%= form.date_field :spent_on, min: Date.new(year, 1, 1), max: [Date.new(year, 12, 31), Date.current].min, required: true, aria: { describedby: "expense-date-hint" } %>
+      <small id="expense-date-hint">Use the date on the receipt, card charge, or payment record.</small>
+    </div>
+    <div class="form-row">
+      <%= form.label :payee, "Merchant or person paid" %>
+      <%= form.text_field :payee, placeholder: "e.g. OpenAI, USPS, accountant", maxlength: 120, required: true, aria: { describedby: "expense-payee-hint" } %>
+      <small id="expense-payee-hint">Who received the money, not the card you used.</small>
+    </div>
+    <div class="form-row">
+      <%= form.label :amount_dollars, "Amount paid ($)" %>
+      <%= form.number_field :amount_dollars, value: expense.amount_cents ? expense.amount_dollars : nil, step: "0.01", min: "0.01", required: true, aria: { describedby: "expense-amount-hint" } %>
+      <small id="expense-amount-hint">Enter the full charge before adjusting for business use.</small>
+    </div>
+    <div class="form-row">
+      <%= form.label :category, "Expense category" %>
+      <%= form.select :category, OutsideExpense::CATEGORIES.map { |key, label| [label, key] }, { include_blank: "Choose a category" }, required: true, aria: { describedby: "expense-category-hint" } %>
+      <small id="expense-category-hint">Choose what you bought. Software tools may fit “Other business expenses.”</small>
+    </div>
+    <div class="form-row">
+      <%= form.label :business_use_percent, "Business use (%)" %>
+      <%= form.number_field :business_use_percent, min: 1, max: 100, step: 1, required: true, aria: { describedby: "expense-business-use-hint" } %>
+      <small id="expense-business-use-hint">Use 100% if entirely for business; we count only this share.</small>
+    </div>
+    <div class="form-row">
+      <%= form.label :description, "What was this for? (optional)" %>
+      <%= form.text_field :description, placeholder: "e.g. monthly software for product research", maxlength: 500, aria: { describedby: "expense-description-hint" } %>
+      <small id="expense-description-hint">A short note helps you recognize the charge later.</small>
+    </div>
+  </div>
+  <p class="note">Keep the receipt or statement with your records. Paying a credit card bill does not create a second expense for purchases already entered here.</p>
+  <div class="actions section">
+    <%= form.submit expense.persisted? ? "Save changes" : "Add expense", class: "button" %>
+    <% if expense.persisted? %><%= link_to "Cancel", outside_expenses_path(year: year), class: "button secondary" %><% end %>
+  </div>
+<% end %>
